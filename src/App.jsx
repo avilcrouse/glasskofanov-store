@@ -299,10 +299,7 @@ function App() {
 
                 <button
                   className="main-button"
-                  onClick={() => {
-                    alert("Нажал кнопку");
-                    setCheckout(true);
-                  }}
+                  onClick={() => setCheckout(true)}
                 >
                   Оформить заказ
                 </button>
@@ -311,7 +308,6 @@ function App() {
           )}
           {checkout && (
             <div className="checkout-form">
-              <h1 style={{ color: "red" }}>ФОРМА РАБОТАЕТ</h1>
               <h2>Оформление заказа</h2>
 
               <input
