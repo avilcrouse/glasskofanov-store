@@ -5,6 +5,12 @@ export default function Admin() {
   const [login, setLogin] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  useEffect(() => {
+    fetch("/api/orders")
+      .then((res) => res.json())
+      .then((data) => setOrders(data));
+  }, [login]);
+
   if (!login) {
     return (
       <div className="admin-login">
@@ -47,12 +53,6 @@ export default function Admin() {
       </div>
     );
   }
-
-  useEffect(() => {
-    fetch("/api/orders")
-      .then((res) => res.json())
-      .then((data) => setOrders(data));
-  }, []);
 
   async function changeStatus(orderNumber, status) {
     const response = await fetch("/api/update-order", {
