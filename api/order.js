@@ -1,4 +1,4 @@
-import supabase from "./supabase";
+import supabase from "./supabase.js";
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -8,7 +8,8 @@ export default async function handler(req, res) {
 
   const { name, phone, city, address, cart, username, orderNumber } = req.body;
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  await supabase.from("orders").insert({
+
+  const { data, error } = await supabase.from("orders").insert({
     order_number: orderNumber,
     name,
     phone,
@@ -19,6 +20,11 @@ export default async function handler(req, res) {
     total,
     status: "Новый",
   });
+
+  if (error) {
+    console.log("SUPABASE ERROR:", error);
+  }
+
   const message = `
 🕶 Новый заказ Glass Kofanov
 📦 Заказ №${orderNumber}
@@ -52,7 +58,7 @@ ${total} ₽
 
   const token = process.env.BOT_TOKEN;
   const admin = process.env.ADMIN_ID;
-
+  console.log("ORDER SAVED:", orderNumber);
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: {
