@@ -1,3 +1,4 @@
+import supabase from "./supabase.js";
 export default async function handler(req, res) {
   const update = req.body;
 
@@ -13,7 +14,12 @@ export default async function handler(req, res) {
 
   if (data.startsWith("accept_")) {
     const orderNumber = data.replace("accept_", "");
-
+    await supabase
+      .from("orders")
+      .update({
+        status: "Принят",
+      })
+      .eq("order_number", orderNumber);
     await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
       {
@@ -61,7 +67,12 @@ export default async function handler(req, res) {
   }
   if (data.startsWith("delivery_")) {
     const orderNumber = data.replace("delivery_", "");
-
+    await supabase
+      .from("orders")
+      .update({
+        status: "В доставке",
+      })
+      .eq("order_number", orderNumber);
     await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
       {
@@ -109,7 +120,12 @@ export default async function handler(req, res) {
   }
   if (data.startsWith("done_")) {
     const orderNumber = data.replace("done_", "");
-
+    await supabase
+      .from("orders")
+      .update({
+        status: "Выполнен",
+      })
+      .eq("order_number", orderNumber);
     await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
       {
@@ -150,7 +166,12 @@ export default async function handler(req, res) {
 
   if (data.startsWith("cancel_")) {
     const orderNumber = data.replace("cancel_", "");
-
+    await supabase
+      .from("orders")
+      .update({
+        status: "Отменён",
+      })
+      .eq("order_number", orderNumber);
     await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
       {
