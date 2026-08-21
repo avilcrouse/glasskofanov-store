@@ -240,7 +240,7 @@ function App() {
             <p>{totalItems} товаров</p>
           </div>
 
-          {cart.length === 0 && !orderSuccess ? (
+          {cart.length === 0 ? (
             <div className="empty-cart">
               <h3>Корзина пуста</h3>
 
@@ -397,7 +397,7 @@ function App() {
           )}
         </main>
       )}
-      {orderSuccess && (
+      {page === "cart" && orderSuccess && (
         <div className="success-box">
           <div className="success-icon">✓</div>
 
