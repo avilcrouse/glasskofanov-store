@@ -1,3 +1,4 @@
+import supabase from "./supabase";
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -7,7 +8,17 @@ export default async function handler(req, res) {
 
   const { name, phone, city, address, cart, username, orderNumber } = req.body;
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
+  await supabase.from("orders").insert({
+    order_number: orderNumber,
+    name,
+    phone,
+    city,
+    address,
+    username,
+    cart,
+    total,
+    status: "Новый",
+  });
   const message = `
 🕶 Новый заказ Glass Kofanov
 📦 Заказ №${orderNumber}
