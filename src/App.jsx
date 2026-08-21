@@ -233,14 +233,14 @@ function App() {
         </main>
       )}
 
-      {page === "cart" && (
+      {page === "cart" && !orderSuccess && (
         <main>
           <div className="page-heading">
             <h2>Корзина</h2>
             <p>{totalItems} товаров</p>
           </div>
 
-          {cart.length === 0 ? (
+          {cart.length === 0 && !orderSuccess ? (
             <div className="empty-cart">
               <h3>Корзина пуста</h3>
 
