@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
 export default function Admin() {
+  const [orders, setOrders] = useState([]);
+  const [login, setLogin] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   if (!login) {
     return (
       <div className="admin-login">
@@ -43,10 +47,6 @@ export default function Admin() {
       </div>
     );
   }
-  const [orders, setOrders] = useState([]);
-  const [login, setLogin] = useState(false);
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/orders")
