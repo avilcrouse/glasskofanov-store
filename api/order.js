@@ -54,14 +54,14 @@ ${total} ₽
         inline_keyboard: [
           [
             {
-              text: "📞 Позвонить",
-              url: `https://t.me/${username || " "}`,
+              text: "🟡 Принять заказ",
+              callback_data: `accept_${orderNumber}`,
             },
           ],
           [
             {
-              text: "🟡 Принять заказ",
-              callback_data: `accept_${orderNumber}`,
+              text: "💬 Telegram клиента",
+              url: username ? `https://t.me/${username}` : "https://t.me",
             },
           ],
         ],
