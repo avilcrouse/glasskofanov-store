@@ -55,13 +55,7 @@ ${total} ₽
           [
             {
               text: "📞 Позвонить",
-              url: `tel:${phone}`,
-            },
-          ],
-          [
-            {
-              text: "💬 Telegram",
-              url: username ? `https://t.me/${username}` : "https://t.me",
+              url: `https://t.me/${username || " "}`,
             },
           ],
           [
