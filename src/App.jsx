@@ -385,6 +385,7 @@ function App() {
                     setCart([]);
                     setCheckout(false);
                     setOrderSuccess(true);
+                    setSending(false);
                   }
 
                   setSending(false);
