@@ -5,12 +5,12 @@ export default async function handler(req, res) {
     });
   }
 
-  const { name, phone, city, address, cart, username } = req.body;
-
+  const { name, phone, city, address, cart, username, orderNumber } = req.body;
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const message = `
 🕶 Новый заказ Glass Kofanov
+📦 Заказ №${orderNumber}
 
 👤 Клиент:
 ${name}
