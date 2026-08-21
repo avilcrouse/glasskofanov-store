@@ -11,8 +11,8 @@ export default async function handler(req, res) {
 
   const data = query.data;
 
-  if (data.startsWith("delivery_")) {
-    const orderNumber = data.replace("delivery_", "");
+  if (data.startsWith("accept_")) {
+    const orderNumber = data.replace("accept_", "");
 
     await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           callback_query_id: query.id,
-          text: `Заказ №${orderNumber} передан в доставку`,
+          text: `Заказ №${orderNumber} принят`,
         }),
       },
     );
@@ -43,8 +43,8 @@ export default async function handler(req, res) {
             inline_keyboard: [
               [
                 {
-                  text: "✅ Завершить заказ",
-                  callback_data: `done_${orderNumber}`,
+                  text: "🚚 Передать в доставку",
+                  callback_data: `delivery_${orderNumber}`,
                 },
               ],
               [
