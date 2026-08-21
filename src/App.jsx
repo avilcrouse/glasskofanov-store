@@ -1,3 +1,4 @@
+import Admin from "./Admin.jsx";
 import { useEffect, useState } from "react";
 import "./App.css";
 
@@ -470,6 +471,11 @@ function App() {
           </div>
         </main>
       )}
+      {page === "admin" && (
+        <main>
+          <Admin />
+        </main>
+      )}
 
       <nav className="bottom-nav">
         <button
@@ -503,6 +509,14 @@ function App() {
         >
           <span>♙</span>
           Профиль
+        </button>
+
+        <button
+          className={page === "admin" ? "active" : ""}
+          onClick={() => setPage("admin")}
+        >
+          <span>⚙</span>
+          Админка
         </button>
       </nav>
     </div>
