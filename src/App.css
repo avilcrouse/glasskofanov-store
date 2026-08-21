@@ -472,3 +472,34 @@ main {
 .checkout-form .main-button {
   margin-top: 10px;
 }
+.checkout-form {
+  margin-top: 25px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #f6f6f4;
+}
+
+.checkout-form input {
+  display: block;
+  width: 100% !important;
+  height: 50px;
+
+  margin-bottom: 12px;
+  padding: 0 16px;
+
+  border-radius: 12px;
+  border: 1px solid #ddd;
+
+  background: white;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.checkout-form input:focus {
+  outline: none;
+  border-color: #111;
+}
+
+.checkout-form .main-button {
+  margin-top: 10px;
+}
