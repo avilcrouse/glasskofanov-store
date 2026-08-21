@@ -385,8 +385,6 @@ function App() {
                     setCart([]);
                     setCheckout(false);
                     setOrderSuccess(true);
-                  } else {
-                    alert("Ошибка отправки заказа");
                   }
 
                   setSending(false);
