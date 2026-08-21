@@ -1,31 +1,5 @@
 import { useEffect, useState } from "react";
 
-const [orders, setOrders] = useState([]);
-async function changeStatus(orderNumber, status) {
-  await fetch("/api/update-order", {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-    },
-
-    body: JSON.stringify({
-      orderNumber,
-      status,
-    }),
-  });
-
-  setOrders(
-    orders.map((order) =>
-      order.order_number === orderNumber
-        ? {
-            ...order,
-            status: status,
-          }
-        : order,
-    ),
-  );
-}
 export default function Admin() {
   const [orders, setOrders] = useState([]);
 
