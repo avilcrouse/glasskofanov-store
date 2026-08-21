@@ -1,7 +1,52 @@
 import { useEffect, useState } from "react";
 
 export default function Admin() {
+  if (!login) {
+    return (
+      <div className="admin-login">
+        <h2>Вход в админку</h2>
+
+        <input
+          type="password"
+          placeholder="Пароль"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button
+          onClick={async () => {
+            const res = await fetch("/api/admin-login", {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify({
+                password,
+              }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+              setLogin(true);
+            } else {
+              setError("Неверный пароль");
+            }
+          }}
+        >
+          Войти
+        </button>
+
+        <p>{error}</p>
+      </div>
+    );
+  }
   const [orders, setOrders] = useState([]);
+  const [login, setLogin] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/orders")
