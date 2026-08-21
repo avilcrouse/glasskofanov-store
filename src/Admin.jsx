@@ -1,6 +1,31 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+const [orders, setOrders] = useState([]);
+async function changeStatus(orderNumber, status) {
+  await fetch("/api/update-order", {
+    method: "POST",
 
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      orderNumber,
+      status,
+    }),
+  });
+
+  setOrders(
+    orders.map((order) =>
+      order.order_number === orderNumber
+        ? {
+            ...order,
+            status: status,
+          }
+        : order,
+    ),
+  );
+}
 export default function Admin() {
   const [orders, setOrders] = useState([]);
 
@@ -59,6 +84,31 @@ export default function Admin() {
             </div>
 
             <div className="order-total">💰 {order.total} ₽</div>
+            <div className="admin-buttons">
+              <button
+                onClick={() => changeStatus(order.order_number, "Принят")}
+              >
+                🟡 Принять
+              </button>
+
+              <button
+                onClick={() => changeStatus(order.order_number, "В доставке")}
+              >
+                🚚 Доставка
+              </button>
+
+              <button
+                onClick={() => changeStatus(order.order_number, "Выполнен")}
+              >
+                ✅ Выполнен
+              </button>
+
+              <button
+                onClick={() => changeStatus(order.order_number, "Отменён")}
+              >
+                ❌ Отмена
+              </button>
+            </div>
           </div>
         ))}
       </div>

@@ -595,3 +595,16 @@ main {
   font-size: 20px;
   font-weight: bold;
 }
+.admin-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.admin-buttons button {
+  border: none;
+  padding: 10px 15px;
+  border-radius: 15px;
+  cursor: pointer;
+}
