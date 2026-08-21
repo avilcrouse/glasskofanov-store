@@ -44,6 +44,7 @@ function App() {
   const [sending, setSending] = useState(false);
   const [checkout, setCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderNumber, setOrderNumber] = useState(null);
   const [orderData, setOrderData] = useState({
     name: "",
     phone: "",
@@ -382,10 +383,15 @@ function App() {
                   const result = await response.json();
 
                   if (result.success) {
+                    const number = Math.floor(1000 + Math.random() * 9000);
+
+                    setOrderNumber(number);
+
                     setCart([]);
                     setCheckout(false);
                     setOrderSuccess(true);
                     setSending(false);
+
                     setOrderData({
                       name: "",
                       phone: "",
@@ -408,7 +414,13 @@ function App() {
           <div className="success-icon">✓</div>
 
           <h2>Спасибо за заказ!</h2>
+          <h3>Заказ №{orderNumber}</h3>
 
+          <p>
+            Мы получили ваши данные.
+            <br />
+            Скоро свяжемся с вами.
+          </p>
           <p>
             Мы получили ваши данные.
             <br />
