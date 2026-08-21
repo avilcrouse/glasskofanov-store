@@ -503,3 +503,34 @@ main {
 .checkout-form .main-button {
   margin-top: 10px;
 }
+.success-box {
+  margin: 40px 18px;
+  padding: 35px 20px;
+  border-radius: 22px;
+  background: #f6f6f4;
+  text-align: center;
+}
+
+.success-icon {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #111;
+  color: white;
+  font-size: 40px;
+}
+
+.success-box h2 {
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+.success-box p {
+  margin-bottom: 25px;
+  color: #777;
+  line-height: 1.5;
+}

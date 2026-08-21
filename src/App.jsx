@@ -43,7 +43,7 @@ function App() {
   const [cart, setCart] = useState([]);
   const [sending, setSending] = useState(false);
   const [checkout, setCheckout] = useState(false);
-
+  const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState({
     name: "",
     phone: "",
@@ -382,10 +382,9 @@ function App() {
                   const result = await response.json();
 
                   if (result.success) {
-                    alert("Заказ отправлен!");
-
                     setCart([]);
                     setCheckout(false);
+                    setOrderSuccess(true);
                   } else {
                     alert("Ошибка отправки заказа");
                   }
@@ -399,7 +398,29 @@ function App() {
           )}
         </main>
       )}
+      {orderSuccess && (
+        <div className="success-box">
+          <div className="success-icon">✓</div>
 
+          <h2>Спасибо за заказ!</h2>
+
+          <p>
+            Мы получили ваши данные.
+            <br />
+            Скоро свяжемся с вами.
+          </p>
+
+          <button
+            className="main-button"
+            onClick={() => {
+              setOrderSuccess(false);
+              setPage("home");
+            }}
+          >
+            Вернуться в магазин
+          </button>
+        </div>
+      )}
       {page === "profile" && (
         <main>
           <div className="page-heading">
