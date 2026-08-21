@@ -24,7 +24,12 @@ export default async function handler(req, res) {
 
   if (error) {
     console.log("SUPABASE ERROR:", error);
+    return res.status(500).json({
+      error: error.message,
+    });
   }
+
+  console.log("SUPABASE INSERT OK:", data);
 
   const message = `
 🕶 Новый заказ Glass Kofanov
