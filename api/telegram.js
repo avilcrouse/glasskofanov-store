@@ -125,7 +125,7 @@ export default async function handler(req, res) {
     );
 
     await fetch(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageReplyMarkup`,
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageText`,
       {
         method: "POST",
         headers: {
@@ -134,6 +134,11 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           chat_id: query.message.chat.id,
           message_id: query.message.message_id,
+
+          text: `${query.message.text}
+
+🟢 Статус:
+Выполнен ✅`,
 
           reply_markup: {
             inline_keyboard: [],
@@ -161,7 +166,7 @@ export default async function handler(req, res) {
     );
 
     await fetch(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageReplyMarkup`,
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageText`,
       {
         method: "POST",
         headers: {
@@ -170,6 +175,11 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           chat_id: query.message.chat.id,
           message_id: query.message.message_id,
+
+          text: `${query.message.text}
+
+🔴 Статус:
+Отменён ❌`,
 
           reply_markup: {
             inline_keyboard: [],
