@@ -364,7 +364,8 @@ function App() {
                   setSending(true);
 
                   const tg = window.Telegram?.WebApp;
-
+                  const number = Math.floor(1000 + Math.random() * 9000);
+                  setOrderNumber(number);
                   const response = await fetch("/api/order", {
                     method: "POST",
                     headers: {
@@ -377,17 +378,13 @@ function App() {
                       address: orderData.address,
                       cart: cart,
                       username: tg?.initDataUnsafe?.user?.username,
-                      orderNumber: orderNumber,
+                      orderNumber: number,
                     }),
                   });
 
                   const result = await response.json();
 
                   if (result.success) {
-                    const number = Math.floor(1000 + Math.random() * 9000);
-
-                    setOrderNumber(number);
-
                     setCart([]);
                     setCheckout(false);
                     setOrderSuccess(true);
