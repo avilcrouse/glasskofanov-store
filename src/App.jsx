@@ -386,6 +386,12 @@ function App() {
                     setCheckout(false);
                     setOrderSuccess(true);
                     setSending(false);
+                    setOrderData({
+                      name: "",
+                      phone: "",
+                      city: "",
+                      address: "",
+                    });
                   }
 
                   setSending(false);
