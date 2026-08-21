@@ -1,6 +1,7 @@
 import supabase from "./supabase.js";
-console.log("URL:", process.env.SUPABASE_URL);
+
 console.log("SUPABASE CONNECTED");
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -9,47 +10,12 @@ export default async function handler(req, res) {
   }
 
   const { name, phone, city, address, cart, username, orderNumber } = req.body;
+
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  console.log("BEFORE SUPABASE");
-
-  const { data, error } = await supabase
-    .from("orders")
-    .insert({
-      order_number: orderNumber,
-      name,
-      phone,
-      city,
-      address,
-      username,
-      cart,
-      total,
-      status: "Новый",
-    })
-    .select();
-
-  console.log("AFTER SUPABASE");
-
-  if (error) {
-    console.log("SUPABASE ERROR:", error);
-    return res.status(500).json({
-      error: error.message,
-    });
-  }
-
-  console.log("SUPABASE INSERT OK:", data);
-
-  if (error) {
-    console.log("SUPABASE ERROR:", error);
-    return res.status(500).json({
-      error: error.message,
-    });
-  }
-
-  console.log("SUPABASE INSERT OK:", data);
 
   const message = `
 🕶 Новый заказ Glass Kofanov
+
 📦 Заказ №${orderNumber}
 
 👤 Клиент:
@@ -81,33 +47,61 @@ ${total} ₽
 
   const token = process.env.BOT_TOKEN;
   const admin = process.env.ADMIN_ID;
-  console.log("ORDER SAVED:", orderNumber);
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      chat_id: admin,
-      text: message,
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "🟡 Принять заказ",
-              callback_data: `accept_${orderNumber}`,
-            },
-          ],
-          [
-            {
-              text: "💬 Telegram клиента",
-              url: username ? `https://t.me/${username}` : "https://t.me",
-            },
-          ],
-        ],
+
+  // отправляем сообщение в Telegram
+  const telegramResponse = await fetch(
+    `https://api.telegram.org/bot${token}/sendMessage`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    }),
+      body: JSON.stringify({
+        chat_id: admin,
+        text: message,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🟡 Принять заказ",
+                callback_data: `accept_${orderNumber}`,
+              },
+            ],
+          ],
+        },
+      }),
+    },
+  );
+
+  const telegramData = await telegramResponse.json();
+
+  console.log("TELEGRAM MESSAGE:", telegramData);
+
+  // сохраняем заказ в Supabase
+  const { data, error } = await supabase.from("orders").insert({
+    order_number: orderNumber,
+    name,
+    phone,
+    city,
+    address,
+    username,
+    cart,
+    total,
+    status: "Новый",
+
+    telegram_chat_id: admin,
+    telegram_message_id: telegramData.result.message_id,
   });
+
+  if (error) {
+    console.log("SUPABASE ERROR:", error);
+
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+
+  console.log("ORDER SAVED:", orderNumber);
 
   res.json({
     success: true,
