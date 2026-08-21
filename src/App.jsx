@@ -41,7 +41,7 @@ function App() {
   const [page, setPage] = useState("home");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cart, setCart] = useState([]);
-
+  const [sending, setSending] = useState(false);
   const [checkout, setCheckout] = useState(false);
 
   const [orderData, setOrderData] = useState({
@@ -356,7 +356,12 @@ function App() {
 
               <button
                 className="main-button"
+                disabled={sending}
                 onClick={async () => {
+                  if (sending) return;
+
+                  setSending(true);
+
                   const tg = window.Telegram?.WebApp;
 
                   const response = await fetch("/api/order", {
@@ -384,9 +389,11 @@ function App() {
                   } else {
                     alert("Ошибка отправки заказа");
                   }
+
+                  setSending(false);
                 }}
               >
-                Подтвердить заказ
+                {sending ? "Отправка..." : "Подтвердить заказ"}
               </button>
             </div>
           )}
