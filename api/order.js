@@ -50,6 +50,28 @@ ${total} ₽
     body: JSON.stringify({
       chat_id: admin,
       text: message,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "📞 Позвонить",
+              url: `tel:${phone}`,
+            },
+          ],
+          [
+            {
+              text: "💬 Telegram",
+              url: username ? `https://t.me/${username}` : "https://t.me",
+            },
+          ],
+          [
+            {
+              text: "🟡 Принять заказ",
+              callback_data: `accept_${orderNumber}`,
+            },
+          ],
+        ],
+      },
     }),
   });
 
