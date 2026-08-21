@@ -9,6 +9,37 @@ export default function Admin() {
       .then((data) => setOrders(data));
   }, []);
 
+  async function changeStatus(orderNumber, status) {
+    const response = await fetch("/api/update-order", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        orderNumber,
+        status,
+      }),
+    });
+
+    const result = await response.json();
+
+    console.log("STATUS UPDATE:", result);
+
+    if (response.ok) {
+      setOrders(
+        orders.map((order) =>
+          order.order_number === orderNumber
+            ? {
+                ...order,
+                status: status,
+              }
+            : order,
+        ),
+      );
+    }
+  }
   return (
     <div className="admin">
       <div className="page-heading">
