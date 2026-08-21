@@ -439,40 +439,21 @@ main {
     margin-bottom: 20px;
     border-radius: 50%;
     object-fit: cover;
-
-    .checkout-form {
-      margin-top: 25px;
-      padding: 20px;
-      border-radius: 18px;
-      background: #f6f6f4;
-    }
-
-    .checkout-form h2 {
-      margin-top: 0;
-    }
-
-    .checkout-form input {
-      width: 100%;
-      margin-bottom: 12px;
-      padding: 15px;
-
-      border-radius: 12px;
-      border: 1px solid #ddd;
-
-      font-size: 16px;
-    }
-    .checkout-form input:focus {
-  outline: none;
-  border-color: #111;
+  }
+}
+.checkout-form {
+  margin-top: 25px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #f6f6f4;
 }
 
-.checkout-form .main-button {
-  margin-top: 10px;
+.checkout-form h2 {
+  margin-top: 0;
 }
+
 .checkout-form input {
   width: 100%;
-  box-sizing: border-box;
-
   margin-bottom: 12px;
   padding: 15px;
 
@@ -480,6 +461,7 @@ main {
   border: 1px solid #ddd;
 
   font-size: 16px;
+  font-family: inherit;
 }
 
 .checkout-form input:focus {
@@ -490,6 +472,3 @@ main {
 .checkout-form .main-button {
   margin-top: 10px;
 }
-    
-  
-  
