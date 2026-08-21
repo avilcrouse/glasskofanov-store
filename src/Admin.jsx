@@ -59,29 +59,55 @@ export default function Admin() {
 
             <div className="order-total">💰 {order.total} ₽</div>
             <div className="admin-buttons">
-              <button
-                onClick={() => changeStatus(order.order_number, "Принят")}
-              >
-                🟡 Принять
-              </button>
+              {order.status === "Новый" && (
+                <>
+                  <button
+                    onClick={() => changeStatus(order.order_number, "Принят")}
+                  >
+                    🟡 Принять
+                  </button>
 
-              <button
-                onClick={() => changeStatus(order.order_number, "В доставке")}
-              >
-                🚚 Доставка
-              </button>
+                  <button
+                    onClick={() => changeStatus(order.order_number, "Отменён")}
+                  >
+                    ❌ Отмена
+                  </button>
+                </>
+              )}
 
-              <button
-                onClick={() => changeStatus(order.order_number, "Выполнен")}
-              >
-                ✅ Выполнен
-              </button>
+              {order.status === "Принят" && (
+                <>
+                  <button
+                    onClick={() =>
+                      changeStatus(order.order_number, "В доставке")
+                    }
+                  >
+                    🚚 Доставка
+                  </button>
 
-              <button
-                onClick={() => changeStatus(order.order_number, "Отменён")}
-              >
-                ❌ Отмена
-              </button>
+                  <button
+                    onClick={() => changeStatus(order.order_number, "Отменён")}
+                  >
+                    ❌ Отмена
+                  </button>
+                </>
+              )}
+
+              {order.status === "В доставке" && (
+                <>
+                  <button
+                    onClick={() => changeStatus(order.order_number, "Выполнен")}
+                  >
+                    ✅ Выполнен
+                  </button>
+
+                  <button
+                    onClick={() => changeStatus(order.order_number, "Отменён")}
+                  >
+                    ❌ Отмена
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}
