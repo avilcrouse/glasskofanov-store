@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 
 export default function Admin() {
   const [orders, setOrders] = useState([]);
-  const [login, setLogin] = useState(false);
+  const [login, setLogin] = useState(
+    localStorage.getItem("admin_login") === "true",
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function Admin() {
             const data = await res.json();
 
             if (data.success) {
+              localStorage.setItem("admin_login", "true");
+
               setLogin(true);
-            } else {
-              setError("Неверный пароль");
             }
           }}
         >
@@ -88,7 +90,17 @@ export default function Admin() {
   return (
     <div className="admin">
       <div className="page-heading">
-        <h2>Заказы</h2>
+        <h2>
+          Заказы
+          <button
+            onClick={() => {
+              localStorage.removeItem("admin_login");
+              setLogin(false);
+            }}
+          >
+            Выйти
+          </button>
+        </h2>
         <p>Управление заказами магазина</p>
       </div>
 
