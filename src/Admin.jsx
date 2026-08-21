@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import supabase from "./supabaseClient";
 
 export default function Admin() {
   const [orders, setOrders] = useState([]);
@@ -8,9 +9,32 @@ export default function Admin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   useEffect(() => {
+    if (!login) return;
+
     fetch("/api/orders")
       .then((res) => res.json())
       .then((data) => setOrders(data));
+
+    const channel = supabase
+      .channel("orders-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        () => {
+          fetch("/api/orders")
+            .then((res) => res.json())
+            .then((data) => setOrders(data));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [login]);
 
   if (!login) {
