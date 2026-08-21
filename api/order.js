@@ -11,17 +11,33 @@ export default async function handler(req, res) {
   const { name, phone, city, address, cart, username, orderNumber } = req.body;
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const { data, error } = await supabase.from("orders").insert({
-    order_number: orderNumber,
-    name,
-    phone,
-    city,
-    address,
-    username,
-    cart,
-    total,
-    status: "Новый",
-  });
+  console.log("BEFORE SUPABASE");
+
+  const { data, error } = await supabase
+    .from("orders")
+    .insert({
+      order_number: orderNumber,
+      name,
+      phone,
+      city,
+      address,
+      username,
+      cart,
+      total,
+      status: "Новый",
+    })
+    .select();
+
+  console.log("AFTER SUPABASE");
+
+  if (error) {
+    console.log("SUPABASE ERROR:", error);
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+
+  console.log("SUPABASE INSERT OK:", data);
 
   if (error) {
     console.log("SUPABASE ERROR:", error);
