@@ -354,7 +354,40 @@ function App() {
                 }
               />
 
-              <button className="main-button">Подтвердить заказ</button>
+              <button
+                className="main-button"
+                onClick={async () => {
+                  const tg = window.Telegram?.WebApp;
+
+                  const response = await fetch("/api/order", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      name: orderData.name,
+                      phone: orderData.phone,
+                      city: orderData.city,
+                      address: orderData.address,
+                      cart: cart,
+                      username: tg?.initDataUnsafe?.user?.username,
+                    }),
+                  });
+
+                  const result = await response.json();
+
+                  if (result.success) {
+                    alert("Заказ отправлен!");
+
+                    setCart([]);
+                    setCheckout(false);
+                  } else {
+                    alert("Ошибка отправки заказа");
+                  }
+                }}
+              >
+                Подтвердить заказ
+              </button>
             </div>
           )}
         </main>
