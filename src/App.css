@@ -534,3 +534,64 @@ main {
   color: #777;
   line-height: 1.5;
 }
+.admin {
+  padding: 20px;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-card {
+  background: #f7f7f7;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.order-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-top h3 {
+  margin: 0;
+}
+
+.order-info p,
+.products p {
+  margin: 8px 0;
+}
+
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #ddd;
+  font-size: 14px;
+}
+
+.status.done {
+  background: #c8f7c5;
+}
+
+.status.cancel {
+  background: #ffc8c8;
+}
+
+.status.accept {
+  background: #fff0a8;
+}
+
+.products {
+  margin-top: 15px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+.order-total {
+  margin-top: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}

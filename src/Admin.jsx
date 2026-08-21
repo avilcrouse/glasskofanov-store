@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./App.css";
 
 export default function Admin() {
   const [orders, setOrders] = useState([]);
@@ -11,26 +12,56 @@ export default function Admin() {
 
   return (
     <div className="admin">
-      <h1>Заказы</h1>
+      <div className="page-heading">
+        <h2>Заказы</h2>
+        <p>Управление заказами магазина</p>
+      </div>
 
-      {orders.map((order) => (
-        <div className="order-card" key={order.id}>
-          <h2>Заказ №{order.order_number}</h2>
+      <div className="orders-list">
+        {orders.map((order) => (
+          <div className="order-card" key={order.id}>
+            <div className="order-top">
+              <h3>Заказ №{order.order_number}</h3>
 
-          <p>👤 {order.name}</p>
+              <span
+                className={
+                  order.status === "Выполнен"
+                    ? "status done"
+                    : order.status === "Отменён"
+                      ? "status cancel"
+                      : order.status === "Принят"
+                        ? "status accept"
+                        : "status"
+                }
+              >
+                {order.status}
+              </span>
+            </div>
 
-          <p>📞 {order.phone}</p>
+            <div className="order-info">
+              <p>👤 {order.name}</p>
 
-          <p>📍 {order.city}</p>
+              <p>📞 {order.phone}</p>
 
-          <p>💰 {order.total} ₽</p>
+              <p>📍 {order.city}</p>
 
-          <p>
-            Статус:
-            {order.status}
-          </p>
-        </div>
-      ))}
+              <p>🏠 {order.address}</p>
+            </div>
+
+            <div className="products">
+              <h4>🛒 Товары:</h4>
+
+              {order.cart?.map((item, index) => (
+                <p key={index}>
+                  {item.name} × {item.quantity} — {item.price} ₽
+                </p>
+              ))}
+            </div>
+
+            <div className="order-total">💰 {order.total} ₽</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
