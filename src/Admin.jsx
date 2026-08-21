@@ -24,13 +24,17 @@ export default function Admin() {
           schema: "public",
           table: "orders",
         },
-        () => {
+        (payload) => {
+          console.log("REALTIME EVENT:", payload);
+
           fetch("/api/orders")
             .then((res) => res.json())
             .then((data) => setOrders(data));
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("REALTIME STATUS:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
