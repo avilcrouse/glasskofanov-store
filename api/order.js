@@ -1,4 +1,5 @@
 import supabase from "./supabase.js";
+console.log("URL:", process.env.SUPABASE_URL);
 console.log("SUPABASE CONNECTED");
 export default async function handler(req, res) {
   if (req.method !== "POST") {
