@@ -1,128 +1,124 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
 
 const products = [
   {
     id: 1,
-    name: 'Kofanov Classic Black',
+    name: "Kofanov Classic Black",
     price: 4990,
-    category: 'Солнцезащитные',
-    description: 'Лёгкая классическая оправа на каждый день.',
-    image:
-      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900',
+    category: "Солнцезащитные",
+    description: "Лёгкая классическая оправа на каждый день.",
+    image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900",
   },
   {
     id: 2,
-    name: 'Kofanov Silver',
+    name: "Kofanov Silver",
     price: 5990,
-    category: 'Мужские',
-    description: 'Современная модель с универсальной посадкой.',
-    image:
-      'https://images.unsplash.com/photo-1577803645773-f96470509666?w=900',
+    category: "Мужские",
+    description: "Современная модель с универсальной посадкой.",
+    image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=900",
   },
   {
     id: 3,
-    name: 'Kofanov Brown',
+    name: "Kofanov Brown",
     price: 4490,
-    category: 'Классические',
-    description: 'Тёплый оттенок оправы и минималистичный дизайн.',
-    image:
-      'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=900',
+    category: "Классические",
+    description: "Тёплый оттенок оправы и минималистичный дизайн.",
+    image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=900",
   },
   {
     id: 4,
-    name: 'Kofanov Premium',
+    name: "Kofanov Premium",
     price: 7990,
-    category: 'Premium',
-    description: 'Премиальная модель с акцентом на детали.',
-    image:
-      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900',
+    category: "Premium",
+    description: "Премиальная модель с акцентом на детали.",
+    image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900",
   },
-]
+];
 
 function App() {
-  const [telegramUser, setTelegramUser] = useState(null)
-  const [page, setPage] = useState('home')
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [cart, setCart] = useState([])
+  const [telegramUser, setTelegramUser] = useState(null);
+  const [page, setPage] = useState("home");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+
+  const [checkout, setCheckout] = useState(false);
+
+  const [orderData, setOrderData] = useState({
+    name: "",
+    phone: "",
+    city: "",
+    address: "",
+  });
 
   useEffect(() => {
-    const tg = window.Telegram?.WebApp
+    const tg = window.Telegram?.WebApp;
 
     if (!tg) {
-      return
+      return;
     }
 
-    tg.ready()
-    tg.expand()
+    tg.ready();
+    tg.expand();
 
-    const user = tg.initDataUnsafe?.user
+    const user = tg.initDataUnsafe?.user;
 
     if (user) {
-      setTelegramUser(user)
+      setTelegramUser(user);
     }
-  }, [])
+  }, []);
 
   const addToCart = (product) => {
     setCart((currentCart) => {
       const existingProduct = currentCart.find(
-        (item) => item.id === product.id
-      )
+        (item) => item.id === product.id,
+      );
 
       if (existingProduct) {
         return currentCart.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
+            : item,
+        );
       }
 
-      return [...currentCart, { ...product, quantity: 1 }]
-    })
-  }
+      return [...currentCart, { ...product, quantity: 1 }];
+    });
+  };
 
   const increaseQuantity = (id) => {
     setCart((currentCart) =>
       currentCart.map((item) =>
-        item.id === id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    )
-  }
+        item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
+      ),
+    );
+  };
 
   const decreaseQuantity = (id) => {
     setCart((currentCart) =>
       currentCart
         .map((item) =>
-          item.id === id
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
+          item.id === id ? { ...item, quantity: item.quantity - 1 } : item,
         )
-        .filter((item) => item.quantity > 0)
-    )
-  }
+        .filter((item) => item.quantity > 0),
+    );
+  };
 
   const removeFromCart = (id) => {
-    setCart((currentCart) =>
-      currentCart.filter((item) => item.id !== id)
-    )
-  }
+    setCart((currentCart) => currentCart.filter((item) => item.id !== id));
+  };
 
-  const totalItems = cart.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  )
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
-  )
+    0,
+  );
 
   const openProduct = (product) => {
-    setSelectedProduct(product)
-    setPage('product')
-  }
+    setSelectedProduct(product);
+    setPage("product");
+  };
 
   const renderProducts = () => (
     <div className="products">
@@ -132,27 +128,20 @@ function App() {
           key={product.id}
           onClick={() => openProduct(product)}
         >
-          <img
-            src={product.image}
-            alt={product.name}
-          />
+          <img src={product.image} alt={product.name} />
 
           <div className="product-info">
-            <span className="category">
-              {product.category}
-            </span>
+            <span className="category">{product.category}</span>
 
             <h3>{product.name}</h3>
 
             <div className="product-bottom">
-              <strong>
-                {product.price.toLocaleString('ru-RU')} ₽
-              </strong>
+              <strong>{product.price.toLocaleString("ru-RU")} ₽</strong>
 
               <button
                 onClick={(event) => {
-                  event.stopPropagation()
-                  addToCart(product)
+                  event.stopPropagation();
+                  addToCart(product);
                 }}
               >
                 +
@@ -162,7 +151,7 @@ function App() {
         </article>
       ))}
     </div>
-  )
+  );
 
   return (
     <div className="app">
@@ -172,15 +161,12 @@ function App() {
           <span>EYEWEAR STORE</span>
         </div>
 
-        <button
-          className="cart-top"
-          onClick={() => setPage('cart')}
-        >
+        <button className="cart-top" onClick={() => setPage("cart")}>
           Корзина · {totalItems}
         </button>
       </header>
 
-      {page === 'home' && (
+      {page === "home" && (
         <>
           <section className="hero">
             <p>НОВАЯ КОЛЛЕКЦИЯ</p>
@@ -191,9 +177,7 @@ function App() {
               создают образ.
             </h2>
 
-            <span>
-              Современные оправы и солнцезащитные очки
-            </span>
+            <span>Современные оправы и солнцезащитные очки</span>
           </section>
 
           <main>
@@ -207,7 +191,7 @@ function App() {
         </>
       )}
 
-      {page === 'catalog' && (
+      {page === "catalog" && (
         <main>
           <div className="page-heading">
             <h2>Каталог</h2>
@@ -218,12 +202,9 @@ function App() {
         </main>
       )}
 
-      {page === 'product' && selectedProduct && (
+      {page === "product" && selectedProduct && (
         <main className="product-page">
-          <button
-            className="back-button"
-            onClick={() => setPage('catalog')}
-          >
+          <button className="back-button" onClick={() => setPage("catalog")}>
             ← Назад
           </button>
 
@@ -233,18 +214,14 @@ function App() {
             alt={selectedProduct.name}
           />
 
-          <span className="category">
-            {selectedProduct.category}
-          </span>
+          <span className="category">{selectedProduct.category}</span>
 
           <h2>{selectedProduct.name}</h2>
 
-          <p className="description">
-            {selectedProduct.description}
-          </p>
+          <p className="description">{selectedProduct.description}</p>
 
           <div className="product-price">
-            {selectedProduct.price.toLocaleString('ru-RU')} ₽
+            {selectedProduct.price.toLocaleString("ru-RU")} ₽
           </div>
 
           <button
@@ -256,7 +233,7 @@ function App() {
         </main>
       )}
 
-      {page === 'cart' && (
+      {page === "cart" && (
         <main>
           <div className="page-heading">
             <h2>Корзина</h2>
@@ -267,13 +244,11 @@ function App() {
             <div className="empty-cart">
               <h3>Корзина пуста</h3>
 
-              <p>
-                Добавьте понравившиеся очки из каталога.
-              </p>
+              <p>Добавьте понравившиеся очки из каталога.</p>
 
               <button
                 className="main-button"
-                onClick={() => setPage('catalog')}
+                onClick={() => setPage("catalog")}
               >
                 Перейти в каталог
               </button>
@@ -282,51 +257,31 @@ function App() {
             <>
               <div className="cart-list">
                 {cart.map((item) => (
-                  <div
-                    className="cart-item"
-                    key={item.id}
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                    />
+                  <div className="cart-item" key={item.id}>
+                    <img src={item.image} alt={item.name} />
 
                     <div className="cart-item-info">
-                      <span className="category">
-                        {item.category}
-                      </span>
+                      <span className="category">{item.category}</span>
 
                       <h3>{item.name}</h3>
 
-                      <strong>
-                        {item.price.toLocaleString('ru-RU')} ₽
-                      </strong>
+                      <strong>{item.price.toLocaleString("ru-RU")} ₽</strong>
 
                       <div className="quantity">
-                        <button
-                          onClick={() =>
-                            decreaseQuantity(item.id)
-                          }
-                        >
+                        <button onClick={() => decreaseQuantity(item.id)}>
                           −
                         </button>
 
                         <span>{item.quantity}</span>
 
-                        <button
-                          onClick={() =>
-                            increaseQuantity(item.id)
-                          }
-                        >
+                        <button onClick={() => increaseQuantity(item.id)}>
                           +
                         </button>
                       </div>
 
                       <button
                         className="remove-button"
-                        onClick={() =>
-                          removeFromCart(item.id)
-                        }
+                        onClick={() => removeFromCart(item.id)}
                       >
                         Удалить
                       </button>
@@ -339,21 +294,77 @@ function App() {
                 <div>
                   <span>Итого</span>
 
-                  <strong>
-                    {totalPrice.toLocaleString('ru-RU')} ₽
-                  </strong>
+                  <strong>{totalPrice.toLocaleString("ru-RU")} ₽</strong>
                 </div>
 
-                <button className="main-button">
+                <button
+                  className="main-button"
+                  onClick={() => {
+                    alert("Нажал кнопку");
+                    setCheckout(true);
+                  }}
+                >
                   Оформить заказ
                 </button>
               </div>
             </>
           )}
+          {checkout && (
+            <div className="checkout-form">
+              <h1 style={{ color: "red" }}>ФОРМА РАБОТАЕТ</h1>
+              <h2>Оформление заказа</h2>
+
+              <input
+                placeholder="Имя"
+                value={orderData.name}
+                onChange={(e) =>
+                  setOrderData({
+                    ...orderData,
+                    name: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                placeholder="Телефон"
+                value={orderData.phone}
+                onChange={(e) =>
+                  setOrderData({
+                    ...orderData,
+                    phone: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                placeholder="Город"
+                value={orderData.city}
+                onChange={(e) =>
+                  setOrderData({
+                    ...orderData,
+                    city: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                placeholder="Адрес доставки"
+                value={orderData.address}
+                onChange={(e) =>
+                  setOrderData({
+                    ...orderData,
+                    address: e.target.value,
+                  })
+                }
+              />
+
+              <button className="main-button">Подтвердить заказ</button>
+            </div>
+          )}
         </main>
       )}
 
-      {page === 'profile' && (
+      {page === "profile" && (
         <main>
           <div className="page-heading">
             <h2>Профиль</h2>
@@ -369,26 +380,24 @@ function App() {
               />
             ) : (
               <div className="avatar">
-                {telegramUser?.first_name?.[0] || 'GK'}
+                {telegramUser?.first_name?.[0] || "GK"}
               </div>
             )}
 
             <h3>
               {telegramUser
-                ? `${telegramUser.first_name || ''} ${
-                    telegramUser.last_name || ''
+                ? `${telegramUser.first_name || ""} ${
+                    telegramUser.last_name || ""
                   }`
-                : 'Покупатель'}
+                : "Покупатель"}
             </h3>
 
-            {telegramUser?.username && (
-              <p>@{telegramUser.username}</p>
-            )}
+            {telegramUser?.username && <p>@{telegramUser.username}</p>}
 
             {!telegramUser && (
               <p>
-                Откройте магазин через Telegram, чтобы
-                здесь появились данные вашего профиля.
+                Откройте магазин через Telegram, чтобы здесь появились данные
+                вашего профиля.
               </p>
             )}
           </div>
@@ -397,45 +406,40 @@ function App() {
 
       <nav className="bottom-nav">
         <button
-          className={page === 'home' ? 'active' : ''}
-          onClick={() => setPage('home')}
+          className={page === "home" ? "active" : ""}
+          onClick={() => setPage("home")}
         >
           <span>⌂</span>
           Главная
         </button>
 
         <button
-          className={page === 'catalog' ? 'active' : ''}
-          onClick={() => setPage('catalog')}
+          className={page === "catalog" ? "active" : ""}
+          onClick={() => setPage("catalog")}
         >
           <span>▦</span>
           Каталог
         </button>
 
         <button
-          className={page === 'cart' ? 'active' : ''}
-          onClick={() => setPage('cart')}
+          className={page === "cart" ? "active" : ""}
+          onClick={() => setPage("cart")}
         >
           <span>○</span>
           Корзина
-
-          {totalItems > 0 && (
-            <b className="badge">
-              {totalItems}
-            </b>
-          )}
+          {totalItems > 0 && <b className="badge">{totalItems}</b>}
         </button>
 
         <button
-          className={page === 'profile' ? 'active' : ''}
-          onClick={() => setPage('profile')}
+          className={page === "profile" ? "active" : ""}
+          onClick={() => setPage("profile")}
         >
           <span>♙</span>
           Профиль
         </button>
       </nav>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
