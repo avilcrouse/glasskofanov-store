@@ -12,62 +12,49 @@ export default async function handler(req, res) {
   const data = query.data;
 
   if (data.startsWith("accept_")) {
+    const orderNumber = data.replace("accept_", "");
 
-  const orderNumber = data.replace("accept_", "");
-
-
-  await fetch(
-    `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
-    {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
+    await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          callback_query_id: query.id,
+          text: `Заказ №${orderNumber} принят`,
+        }),
       },
-      body:JSON.stringify({
-        callback_query_id: query.id,
-        text:`Заказ №${orderNumber} принят`
-      })
-    }
-  );
+    );
 
+    await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageReplyMarkup`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id,
 
-  await fetch(
-    `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageReplyMarkup`,
-    {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id,
-
-        reply_markup:{
-          inline_keyboard:[
-            [
-              {
-                text:"🚚 Передать в доставку",
-                callback_data:`delivery_${orderNumber}`
-              }
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "🚚 Передать в доставку",
+                  callback_data: `delivery_${orderNumber}`,
+                },
+              ],
+              [
+                {
+                  text: "❌ Отменить заказ",
+                  callback_data: `cancel_${orderNumber}`,
+                },
+              ],
             ],
-            [
-              {
-                text:"❌ Отменить заказ",
-                callback_data:`cancel_${orderNumber}`
-              }
-            ]
-          ]
-        }
-      })
-    }
-  );
-
-}
-
-📦 Заказ №${orderNumber}
-
-🟢 Статус:
-Принят`,
+          },
         }),
       },
     );
