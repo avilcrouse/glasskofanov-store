@@ -11,6 +11,7 @@ export default async function handler(req, res) {
 
   const { name, phone, city, address, cart, username, orderNumber, chatId } =
     req.body;
+  console.log("CUSTOMER CHAT ID:", chatId);
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const message = `
