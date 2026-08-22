@@ -12,7 +12,18 @@ export default async function handler(req, res) {
 
     const chatId = callback.message.chat.id;
     const messageId = callback.message.message_id;
-
+    await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          callback_query_id: callback.id,
+        }),
+      },
+    );
     let newStatus = "";
     let newButtons = [];
 
@@ -37,7 +48,11 @@ export default async function handler(req, res) {
         ],
       ];
 
-      await updateOrder(orderNumber, newStatus);
+      try {
+        await updateOrder(orderNumber, newStatus);
+      } catch (err) {
+        console.log("UPDATE ERROR:", err);
+      }
     }
 
     // Передать в доставку
@@ -61,7 +76,11 @@ export default async function handler(req, res) {
         ],
       ];
 
-      await updateOrder(orderNumber, newStatus);
+      try {
+        await updateOrder(orderNumber, newStatus);
+      } catch (err) {
+        console.log("UPDATE ERROR:", err);
+      }
     }
 
     // Выполнен
@@ -79,7 +98,11 @@ export default async function handler(req, res) {
         ],
       ];
 
-      await updateOrder(orderNumber, newStatus);
+      try {
+        await updateOrder(orderNumber, newStatus);
+      } catch (err) {
+        console.log("UPDATE ERROR:", err);
+      }
     }
 
     // Отмена
@@ -97,7 +120,11 @@ export default async function handler(req, res) {
         ],
       ];
 
-      await updateOrder(orderNumber, newStatus);
+      try {
+        await updateOrder(orderNumber, newStatus);
+      } catch (err) {
+        console.log("UPDATE ERROR:", err);
+      }
     }
 
     // меняем кнопки в Telegram
@@ -123,23 +150,6 @@ export default async function handler(req, res) {
         },
       );
     }
-
-    // убираем загрузку кнопки
-    await fetch(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          callback_query_id: callback.id,
-          text: `Статус изменён: ${newStatus}`,
-        }),
-      },
-    );
   }
 
   res.status(200).json({
@@ -148,6 +158,19 @@ export default async function handler(req, res) {
 }
 
 async function updateOrder(orderNumber, status) {
+  // получаем заказ
+  const { data: order, error: findError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("order_number", orderNumber)
+    .single();
+
+  if (findError) {
+    console.log("FIND ORDER ERROR:", findError);
+    return;
+  }
+
+  // меняем статус
   const { error } = await supabase
     .from("orders")
     .update({
@@ -157,7 +180,64 @@ async function updateOrder(orderNumber, status) {
 
   if (error) {
     console.log("SUPABASE ERROR:", error);
+    return;
   }
 
   console.log("ORDER STATUS:", orderNumber, status);
+
+  // отправляем клиенту сообщение
+  if (order.customer_chat_id && process.env.BOT_TOKEN) {
+    let text = "";
+
+    if (status === "Принят") {
+      text = `✅ Ваш заказ №${orderNumber} принят!
+
+🕶 Glass Kofanov
+
+Мы начали обработку вашего заказа.`;
+    }
+
+    if (status === "В доставке") {
+      text = `🚚 Ваш заказ №${orderNumber} уже в доставке!
+
+🕶 Glass Kofanov
+
+Курьер скоро свяжется с вами.`;
+    }
+
+    if (status === "Выполнен") {
+      text = `🎉 Ваш заказ №${orderNumber} выполнен!
+
+Спасибо за покупку 🕶`;
+    }
+
+    if (status === "Отменён") {
+      text = `❌ Ваш заказ №${orderNumber} отменён.
+
+Если это ошибка — свяжитесь с нами.`;
+    }
+
+    if (text) {
+      await fetch(
+        `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            chat_id: order.customer_chat_id,
+
+            text,
+          }),
+        },
+      );
+
+      console.log("CLIENT NOTIFICATION SENT:", order.customer_chat_id);
+    }
+  } else {
+    console.log("NO CUSTOMER CHAT ID");
+  }
 }
