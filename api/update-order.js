@@ -7,14 +7,22 @@ export default async function handler(req, res) {
     });
   }
 
-  const { id, status } = req.body;
+  console.log("UPDATE BODY:", req.body);
+
+  const { orderNumber, status } = req.body;
+
+  if (!orderNumber || !status) {
+    return res.status(400).json({
+      error: "Missing orderNumber or status",
+    });
+  }
 
   const { error } = await supabase
     .from("orders")
     .update({
       status,
     })
-    .eq("id", id);
+    .eq("order_number", orderNumber);
 
   if (error) {
     console.log("UPDATE ERROR:", error);
@@ -23,6 +31,8 @@ export default async function handler(req, res) {
       error: error.message,
     });
   }
+
+  console.log("ORDER UPDATED:", orderNumber, status);
 
   res.json({
     success: true,
