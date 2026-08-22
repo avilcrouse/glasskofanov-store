@@ -5,38 +5,103 @@ export default async function handler(req, res) {
 
   console.log("TELEGRAM UPDATE:", update);
 
-  // Проверяем, что пришло нажатие кнопки
   if (update.callback_query) {
     const callback = update.callback_query;
 
     const data = callback.data;
 
-    // Нажата кнопка "Принять заказ"
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+
+    let newStatus = "";
+    let newButtons = [];
+
+    // Принять заказ
     if (data.startsWith("accept_")) {
       const orderNumber = data.replace("accept_", "");
 
-      const chatId = callback.message.chat.id;
-      const messageId = callback.message.message_id;
+      newStatus = "Принят";
 
-      // Меняем статус заказа в Supabase
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          status: "Принят",
-        })
-        .eq("order_number", orderNumber);
+      newButtons = [
+        [
+          {
+            text: "🚚 В доставку",
+            callback_data: `delivery_${orderNumber}`,
+          },
+        ],
+        [
+          {
+            text: "❌ Отменить",
+            callback_data: `cancel_${orderNumber}`,
+          },
+        ],
+      ];
 
-      if (error) {
-        console.log("SUPABASE ERROR:", error);
+      await updateOrder(orderNumber, newStatus);
+    }
 
-        return res.status(500).json({
-          error: error.message,
-        });
-      }
+    // Передать в доставку
+    if (data.startsWith("delivery_")) {
+      const orderNumber = data.replace("delivery_", "");
 
-      console.log("ORDER ACCEPTED:", orderNumber);
+      newStatus = "В доставке";
 
-      // Меняем кнопку в Telegram сообщении
+      newButtons = [
+        [
+          {
+            text: "✅ Выполнен",
+            callback_data: `complete_${orderNumber}`,
+          },
+        ],
+        [
+          {
+            text: "❌ Отменить",
+            callback_data: `cancel_${orderNumber}`,
+          },
+        ],
+      ];
+
+      await updateOrder(orderNumber, newStatus);
+    }
+
+    // Выполнен
+    if (data.startsWith("complete_")) {
+      const orderNumber = data.replace("complete_", "");
+
+      newStatus = "Выполнен";
+
+      newButtons = [
+        [
+          {
+            text: "✅ Заказ выполнен",
+            callback_data: "done",
+          },
+        ],
+      ];
+
+      await updateOrder(orderNumber, newStatus);
+    }
+
+    // Отмена
+    if (data.startsWith("cancel_")) {
+      const orderNumber = data.replace("cancel_", "");
+
+      newStatus = "Отменён";
+
+      newButtons = [
+        [
+          {
+            text: "❌ Заказ отменён",
+            callback_data: "cancelled",
+          },
+        ],
+      ];
+
+      await updateOrder(orderNumber, newStatus);
+    }
+
+    // меняем кнопки в Telegram
+    if (newButtons.length > 0) {
       await fetch(
         `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageReplyMarkup`,
         {
@@ -52,41 +117,47 @@ export default async function handler(req, res) {
             message_id: messageId,
 
             reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: "✅ Заказ принят",
-
-                    callback_data: "accepted",
-                  },
-                ],
-              ],
+              inline_keyboard: newButtons,
             },
           }),
         },
       );
-
-      // убираем "часики" на кнопке после нажатия
-      await fetch(
-        `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            callback_query_id: callback.id,
-
-            text: "Заказ принят ✅",
-          }),
-        },
-      );
     }
+
+    // убираем загрузку кнопки
+    await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          callback_query_id: callback.id,
+          text: `Статус изменён: ${newStatus}`,
+        }),
+      },
+    );
   }
 
   res.status(200).json({
     ok: true,
   });
+}
+
+async function updateOrder(orderNumber, status) {
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status,
+    })
+    .eq("order_number", orderNumber);
+
+  if (error) {
+    console.log("SUPABASE ERROR:", error);
+  }
+
+  console.log("ORDER STATUS:", orderNumber, status);
 }
