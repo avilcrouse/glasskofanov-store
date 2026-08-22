@@ -9,8 +9,8 @@ export default async function handler(req, res) {
     });
   }
 
-  const { name, phone, city, address, cart, username, orderNumber } = req.body;
-
+  const { name, phone, city, address, cart, username, orderNumber, chatId } =
+    req.body;
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const message = `
@@ -79,7 +79,7 @@ ${total} ₽
 
   console.log("SAVE TELEGRAM IDS:", {
     chat_id: admin,
-    message_id: telegramData.result?.message_id,
+    telegram_message_id: Number(telegramData.result?.message_id),
   });
   console.log("BEFORE INSERT:", {
     admin,
@@ -98,7 +98,9 @@ ${total} ₽
     status: "Новый",
 
     telegram_chat_id: Number(admin),
-    telegram_message_id: Number(telegramData.result.message_id),
+    telegram_message_id: Number(telegramData.result?.message_id),
+
+    customer_chat_id: chatId ? Number(chatId) : null,
   });
 
   if (error) {
