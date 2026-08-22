@@ -145,7 +145,15 @@ async function updateOrder(orderNumber, status) {
     .from("orders")
     .select("*")
     .eq("order_number", orderNumber)
+    .order("id", { ascending: false })
+    .limit(1)
     .single();
+  console.log("FOUND ORDER FOR UPDATE:", {
+    id: order.id,
+    order_number: order.order_number,
+    customer_chat_id: order.customer_chat_id,
+    customer_message_id: order.customer_message_id,
+  });
 
   if (findError) {
     console.log("FIND ORDER ERROR:", findError);

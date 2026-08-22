@@ -7,16 +7,18 @@ export default async function handler(req, res) {
     });
   }
 
-  const { orderNumber, status } = req.body;
+  const { id, status } = req.body;
 
   const { error } = await supabase
     .from("orders")
     .update({
-      status: status,
+      status,
     })
-    .eq("order_number", orderNumber);
+    .eq("id", id);
 
   if (error) {
+    console.log("UPDATE ERROR:", error);
+
     return res.status(500).json({
       error: error.message,
     });
