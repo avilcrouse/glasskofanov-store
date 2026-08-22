@@ -75,7 +75,38 @@ ${total} ₽
   );
 
   const telegramData = await telegramResponse.json();
+  // отправляем сообщение клиенту
+  let customerMessageId = null;
 
+  if (chatId) {
+    const customerResponse = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          chat_id: chatId,
+
+          text: `📦 Ваш заказ №${orderNumber}
+
+Статус:
+⏳ Новый
+
+🕶 Glass Kofanov`,
+        }),
+      },
+    );
+
+    const customerData = await customerResponse.json();
+
+    console.log("CUSTOMER MESSAGE:", customerData);
+
+    customerMessageId = customerData.result?.message_id;
+  }
   console.log("TELEGRAM MESSAGE:", telegramData);
 
   console.log("SAVE TELEGRAM IDS:", {
@@ -104,6 +135,9 @@ ${total} ₽
     telegram_message_id: Number(telegramData.result?.message_id),
 
     customer_chat_id: chatId ? Number(chatId) : null,
+
+    customer_message_id: customerMessageId,
+    customer_message_id: customerMessageId,
   });
 
   if (error) {

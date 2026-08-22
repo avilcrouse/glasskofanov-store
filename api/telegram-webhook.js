@@ -219,7 +219,7 @@ async function updateOrder(orderNumber, status) {
 
     if (text) {
       await fetch(
-        `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
+        `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageText`,
         {
           method: "POST",
 
@@ -229,6 +229,8 @@ async function updateOrder(orderNumber, status) {
 
           body: JSON.stringify({
             chat_id: order.customer_chat_id,
+
+            message_id: order.customer_message_id,
 
             text,
           }),
