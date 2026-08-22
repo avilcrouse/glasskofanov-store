@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     }
 
     // Передать в доставку
-    if (data.startsWith("delivery_")) {
+    else if (data.startsWith("delivery_")) {
       const orderNumber = data.replace("delivery_", "");
 
       newStatus = "В доставке";
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
     }
 
     // Выполнен
-    if (data.startsWith("complete_")) {
+    else if (data.startsWith("complete_")) {
       const orderNumber = data.replace("complete_", "");
 
       newStatus = "Выполнен";
@@ -217,8 +217,8 @@ async function updateOrder(orderNumber, status) {
 Если это ошибка — свяжитесь с нами.`;
     }
 
-    if (text) {
-      await fetch(
+    if (text && order.customer_chat_id && order.customer_message_id) {
+      const response = await fetch(
         `https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageText`,
         {
           method: "POST",
@@ -229,13 +229,15 @@ async function updateOrder(orderNumber, status) {
 
           body: JSON.stringify({
             chat_id: order.customer_chat_id,
-
             message_id: order.customer_message_id,
-
             text,
           }),
         },
       );
+
+      const telegramResult = await response.json();
+
+      console.log("EDIT CLIENT MESSAGE:", telegramResult);
 
       console.log("CLIENT NOTIFICATION SENT:", order.customer_chat_id);
     }
