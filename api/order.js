@@ -81,7 +81,10 @@ ${total} ₽
     chat_id: admin,
     message_id: telegramData.result?.message_id,
   });
-
+  console.log("BEFORE INSERT:", {
+    admin,
+    message_id: telegramData.result.message_id,
+  });
   // сохраняем заказ в Supabase
   const { data, error } = await supabase.from("orders").insert({
     order_number: orderNumber,
