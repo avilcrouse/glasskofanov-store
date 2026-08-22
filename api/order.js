@@ -105,7 +105,9 @@ ${total} ₽
 
     console.log("CUSTOMER MESSAGE:", customerData);
 
-    customerMessageId = customerData.result?.message_id;
+    customerMessageId = customerData.result?.message_id
+      ? Number(customerData.result.message_id)
+      : null;
   }
   console.log("TELEGRAM MESSAGE:", telegramData);
 
@@ -121,6 +123,15 @@ ${total} ₽
   });
   // сохраняем заказ в Supabase
   const { data, error } = await supabase.from("orders").insert({
+    telegram_chat_id: Number(admin),
+
+    telegram_message_id: telegramData.result?.message_id
+      ? Number(telegramData.result.message_id)
+      : null,
+
+    customer_chat_id: chatId ? Number(chatId) : null,
+
+    customer_message_id: customerMessageId,
     order_number: orderNumber,
     name,
     phone,
@@ -132,11 +143,11 @@ ${total} ₽
     status: "Новый",
 
     telegram_chat_id: Number(admin),
-    telegram_message_id: Number(telegramData.result?.message_id),
-
+    telegram_message_id: telegramData.result?.message_id
+      ? Number(telegramData.result.message_id)
+      : null,
     customer_chat_id: chatId ? Number(chatId) : null,
 
-    customer_message_id: customerMessageId,
     customer_message_id: customerMessageId,
   });
 
