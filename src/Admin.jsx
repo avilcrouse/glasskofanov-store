@@ -26,7 +26,7 @@ export default function Admin() {
         },
         (payload) => {
           console.log("REALTIME EVENT:", payload);
-
+          console.log("REALTIME EVENT:", payload);
           fetch("/api/orders")
             .then((res) => res.json())
             .then((data) => setOrders(data));
