@@ -378,7 +378,11 @@ function App() {
                       city: orderData.city,
                       address: orderData.address,
                       cart: cart,
+
                       username: tg?.initDataUnsafe?.user?.username,
+
+                      chatId: tg?.initDataUnsafe?.user?.id,
+
                       orderNumber: number,
                     }),
                   });
