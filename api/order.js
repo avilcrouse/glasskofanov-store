@@ -77,6 +77,11 @@ ${total} ₽
 
   console.log("TELEGRAM MESSAGE:", telegramData);
 
+  console.log("SAVE TELEGRAM IDS:", {
+    chat_id: admin,
+    message_id: telegramData.result?.message_id,
+  });
+
   // сохраняем заказ в Supabase
   const { data, error } = await supabase.from("orders").insert({
     order_number: orderNumber,
@@ -89,8 +94,8 @@ ${total} ₽
     total,
     status: "Новый",
 
-    telegram_chat_id: admin,
-    telegram_message_id: telegramData.result.message_id,
+    telegram_chat_id: Number(admin),
+    telegram_message_id: Number(telegramData.result.message_id),
   });
 
   if (error) {
@@ -101,8 +106,8 @@ ${total} ₽
     });
   }
 
+  console.log("TELEGRAM DATA:", telegramData);
   console.log("ORDER SAVED:", orderNumber);
-
   res.json({
     success: true,
   });
