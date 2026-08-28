@@ -1,4 +1,5 @@
-import supabase from "./supabase.js";
+import crypto from "node:crypto";
+import supabase from "../lib/supabase.js";
 
 console.log("SUPABASE CONNECTED");
 
@@ -9,13 +10,47 @@ export default async function handler(req, res) {
     });
   }
 
-  const { name, phone, city, address, cart, username, orderNumber, chatId } =
-    req.body;
+  const { name, phone, city, address, cart, username, chatId } = req.body;
+  if (!name || !phone || !city || !address || !Array.isArray(cart) || !cart.length) {
+    return res.status(400).json({ error: "Заполните данные и добавьте товары" });
+  }
+
+  const productIds = cart.map((item) => item.id);
+  const { data: databaseProducts, error: productsError } = await supabase
+    .from("products")
+    .select("id, name, price")
+    .in("id", productIds)
+    .eq("active", true);
+
+  if (
+    productsError ||
+    !databaseProducts ||
+    databaseProducts.length !== new Set(productIds).size
+  ) {
+    return res.status(400).json({ error: "Один из товаров больше недоступен" });
+  }
+
+  const normalizedCart = cart.map((item) => {
+    const product = databaseProducts.find(
+      (databaseProduct) => String(databaseProduct.id) === String(item.id),
+    );
+    return {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      quantity: Math.max(1, Math.min(20, Number(item.quantity) || 1)),
+    };
+  });
+  const orderNumber = crypto.randomInt(100000, 1000000);
+  const paymentToken = crypto.randomUUID();
   console.log("CUSTOMER CHAT ID:", chatId);
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = normalizedCart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
 
   const message = `
-🕶 Новый заказ Glass Kofanov
+🕶 Заказ Glass Kofanov — ожидает оплаты
 
 📦 Заказ №${orderNumber}
 
@@ -37,7 +72,7 @@ ${address}
 
 🛒 Товары:
 
-${cart
+${normalizedCart
   .map((item) => `${item.name} × ${item.quantity} — ${item.price} ₽`)
   .join("\n")}
 
@@ -60,16 +95,6 @@ ${total} ₽
       body: JSON.stringify({
         chat_id: admin,
         text: message,
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "🟡 Принять заказ",
-                callback_data: `accept_${orderNumber}`,
-              },
-            ],
-          ],
-        },
       }),
     },
   );
@@ -94,7 +119,7 @@ ${total} ₽
           text: `📦 Ваш заказ №${orderNumber}
 
 Статус:
-⏳ Новый
+💳 Ожидает оплаты
 
 🕶 Glass Kofanov`,
         }),
@@ -129,9 +154,11 @@ ${total} ₽
     city,
     address,
     username,
-    cart,
+    cart: normalizedCart,
     total,
-    status: "Новый",
+    status: "Ожидает оплаты",
+    payment_status: "not_started",
+    payment_token: paymentToken,
     telegram_chat_id: Number(admin),
     telegram_message_id: telegramData.result?.message_id
       ? Number(telegramData.result.message_id)
@@ -153,5 +180,7 @@ ${total} ₽
   console.log("ORDER SAVED:", orderNumber);
   res.json({
     success: true,
+    orderNumber,
+    paymentToken,
   });
 }

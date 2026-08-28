@@ -514,6 +514,11 @@ main {
 .checkout-form .main-button {
   margin-top: 10px;
 }
+
+.checkout-error {
+  color: #b42318;
+  font-size: 14px;
+}
 .checkout-form {
   margin-top: 25px;
   padding: 20px;

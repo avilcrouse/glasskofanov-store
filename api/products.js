@@ -1,4 +1,4 @@
-import supabase from "./supabase.js";
+import supabase from "../lib/supabase.js";
 import { isAdminRequest } from "./admin-auth.js";
 
 const categories = [

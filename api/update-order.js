@@ -1,4 +1,4 @@
-import supabase from "./supabase.js";
+import supabase from "../lib/supabase.js";
 import { isAdminRequest } from "./admin-auth.js";
 
 const allowedStatuses = ["Принят", "В доставке", "Выполнен", "Отменён"];
@@ -41,6 +41,13 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: findError.message,
     });
+  }
+
+  if (
+    !["succeeded", "legacy"].includes(order.payment_status) &&
+    status !== "Отменён"
+  ) {
+    return res.status(409).json({ error: "Сначала заказ должен быть оплачен" });
   }
 
   // меняем статус
