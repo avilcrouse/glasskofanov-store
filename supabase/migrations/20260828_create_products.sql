@@ -17,6 +17,7 @@ create table if not exists public.products (
 
 alter table public.products enable row level security;
 
+drop policy if exists "Public can view active products" on public.products;
 create policy "Public can view active products"
 on public.products for select
 using (active = true);
@@ -29,3 +30,21 @@ select * from (values
   ('Kofanov Premium', 7990, 'Очки спортивные', 'Премиальная модель с акцентом на детали.', 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900', true)
 ) as seed(name, price, category, description, image, is_top)
 where not exists (select 1 from public.products);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'product-images',
+  'product-images',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public can view product images" on storage.objects;
+create policy "Public can view product images"
+on storage.objects for select
+using (bucket_id = 'product-images');
