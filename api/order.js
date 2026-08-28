@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import supabase from "./supabase.js";
+import supabase from "../lib/supabase.js";
 
 console.log("SUPABASE CONNECTED");
 
