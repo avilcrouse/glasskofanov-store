@@ -9,6 +9,9 @@ const categories = [
   "Очки спортивные",
 ];
 
+const returningFromPayment =
+  new URLSearchParams(window.location.search).get("payment") === "return";
+
 const initialProducts = [
   {
     id: 1,
@@ -51,16 +54,25 @@ const initialProducts = [
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
   const [page, setPage] = useState(() =>
-    window.location.hash === "#admin" ? "admin" : "home",
+    window.location.hash === "#admin"
+      ? "admin"
+      : returningFromPayment
+        ? "cart"
+        : "home",
   );
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]);
   const [sending, setSending] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [pendingOrderNumber, setPendingOrderNumber] = useState(null);
+  const [paymentToken, setPaymentToken] = useState(null);
   const [checkout, setCheckout] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderNumber, setOrderNumber] = useState(null);
+  const [orderSuccess, setOrderSuccess] = useState(returningFromPayment);
+  const [orderNumber, setOrderNumber] = useState(() =>
+    returningFromPayment ? localStorage.getItem("last_order_number") : null,
+  );
   const [orderData, setOrderData] = useState({
     name: "",
     phone: "",
@@ -417,51 +429,72 @@ function App() {
                   if (sending) return;
 
                   setSending(true);
+                  setCheckoutError("");
 
                   const tg = window.Telegram?.WebApp;
-                  const number = Math.floor(1000 + Math.random() * 9000);
-                  setOrderNumber(number);
-                  const response = await fetch("/api/order", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      name: orderData.name,
-                      phone: orderData.phone,
-                      city: orderData.city,
-                      address: orderData.address,
-                      cart: cart,
+                  let currentOrderNumber = pendingOrderNumber;
+                  let currentPaymentToken = paymentToken;
 
-                      username: tg?.initDataUnsafe?.user?.username,
+                  try {
+                    if (!currentOrderNumber) {
+                      const response = await fetch("/api/order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: orderData.name,
+                          phone: orderData.phone,
+                          city: orderData.city,
+                          address: orderData.address,
+                          cart,
+                          username: tg?.initDataUnsafe?.user?.username,
+                          chatId: tg?.initDataUnsafe?.user?.id,
+                        }),
+                      });
+                      const result = await response.json();
+                      if (!response.ok) throw new Error(result.error);
+                      currentOrderNumber = result.orderNumber;
+                      currentPaymentToken = result.paymentToken;
+                      setPendingOrderNumber(currentOrderNumber);
+                      setPaymentToken(currentPaymentToken);
+                    }
 
-                      chatId: tg?.initDataUnsafe?.user?.id,
+                    const paymentResponse = await fetch("/api/create-payment", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        orderNumber: currentOrderNumber,
+                        paymentToken: currentPaymentToken,
+                      }),
+                    });
+                    const payment = await paymentResponse.json();
+                    if (!paymentResponse.ok) throw new Error(payment.error);
 
-                      orderNumber: number,
-                    }),
-                  });
-
-                  const result = await response.json();
-
-                  if (result.success) {
+                    localStorage.setItem("last_order_number", currentOrderNumber);
+                    setOrderNumber(currentOrderNumber);
                     setCart([]);
                     setCheckout(false);
                     setOrderSuccess(true);
-                    setSending(false);
-
                     setOrderData({
                       name: "",
                       phone: "",
                       city: "",
                       address: "",
                     });
+                    if (tg?.openLink) {
+                      tg.openLink(payment.confirmationUrl);
+                    } else {
+                      window.location.assign(payment.confirmationUrl);
+                    }
+                  } catch (error) {
+                    setCheckoutError(error.message || "Не удалось начать оплату");
+                  } finally {
+                    setSending(false);
                   }
-
-                  setSending(false);
                 }}
               >
-                {sending ? "Отправка..." : "Подтвердить заказ"}
+                {sending ? "Подготовка оплаты…" : "Перейти к оплате"}
               </button>
+              {checkoutError && <p className="checkout-error">{checkoutError}</p>}
             </div>
           )}
         </main>
@@ -470,13 +503,13 @@ function App() {
         <div className="success-box">
           <div className="success-icon">✓</div>
 
-          <h2>Спасибо за заказ!</h2>
+          <h2>{returningFromPayment ? "Проверяем оплату" : "Завершите оплату"}</h2>
           <h3>Заказ №{orderNumber}</h3>
 
           <p>
-            Мы получили ваши данные.
+            После подтверждения ЮKassa статус заказа изменится автоматически.
             <br />
-            Скоро свяжемся с вами.
+            Уведомление придёт в Telegram.
           </p>
 
           <button

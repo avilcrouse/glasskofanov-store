@@ -43,6 +43,13 @@ export default async function handler(req, res) {
     });
   }
 
+  if (
+    !["succeeded", "legacy"].includes(order.payment_status) &&
+    status !== "Отменён"
+  ) {
+    return res.status(409).json({ error: "Сначала заказ должен быть оплачен" });
+  }
+
   // меняем статус
   const { error } = await supabase
     .from("orders")
