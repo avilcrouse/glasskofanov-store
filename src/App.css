@@ -638,6 +638,30 @@ main {
   margin: 14px 0;
 }
 
+.image-upload {
+  display: block;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px dashed #aaa;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+  cursor: pointer;
+}
+
+.image-upload input {
+  display: none;
+}
+
+.product-image-preview {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
 .admin-products-list {
   display: flex;
   flex-direction: column;
