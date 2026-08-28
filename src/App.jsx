@@ -9,9 +9,6 @@ const categories = [
   "Очки спортивные",
 ];
 
-const returningFromPayment =
-  new URLSearchParams(window.location.search).get("payment") === "return";
-
 const initialProducts = [
   {
     id: 1,
@@ -54,11 +51,7 @@ const initialProducts = [
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
   const [page, setPage] = useState(() =>
-    window.location.hash === "#admin"
-      ? "admin"
-      : returningFromPayment
-        ? "cart"
-        : "home",
+    window.location.hash === "#admin" ? "admin" : "home",
   );
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
@@ -69,10 +62,8 @@ function App() {
   const [pendingOrderNumber, setPendingOrderNumber] = useState(null);
   const [paymentToken, setPaymentToken] = useState(null);
   const [checkout, setCheckout] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(returningFromPayment);
-  const [orderNumber, setOrderNumber] = useState(() =>
-    returningFromPayment ? localStorage.getItem("last_order_number") : null,
-  );
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderNumber, setOrderNumber] = useState(null);
   const [orderData, setOrderData] = useState({
     name: "",
     phone: "",
@@ -458,7 +449,7 @@ function App() {
                       setPaymentToken(currentPaymentToken);
                     }
 
-                    const paymentResponse = await fetch("/api/create-payment", {
+                    const paymentResponse = await fetch("/api/payment-params", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
@@ -469,7 +460,32 @@ function App() {
                     const payment = await paymentResponse.json();
                     if (!paymentResponse.ok) throw new Error(payment.error);
 
-                    localStorage.setItem("last_order_number", currentOrderNumber);
+                    if (!window.cp?.CloudPayments) {
+                      throw new Error("Платёжная форма не загрузилась");
+                    }
+
+                    await new Promise((resolve, reject) => {
+                      const widget = new window.cp.CloudPayments();
+                      widget.pay(
+                        "charge",
+                        {
+                          publicId: payment.publicId,
+                          description: payment.description,
+                          amount: payment.amount,
+                          currency: payment.currency,
+                          accountId: payment.accountId,
+                          invoiceId: payment.invoiceId,
+                          skin: "modern",
+                          data: { paymentToken: currentPaymentToken },
+                        },
+                        {
+                          onSuccess: resolve,
+                          onFail: (reason) =>
+                            reject(new Error(reason || "Оплата не выполнена")),
+                        },
+                      );
+                    });
+
                     setOrderNumber(currentOrderNumber);
                     setCart([]);
                     setCheckout(false);
@@ -480,11 +496,6 @@ function App() {
                       city: "",
                       address: "",
                     });
-                    if (tg?.openLink) {
-                      tg.openLink(payment.confirmationUrl);
-                    } else {
-                      window.location.assign(payment.confirmationUrl);
-                    }
                   } catch (error) {
                     setCheckoutError(error.message || "Не удалось начать оплату");
                   } finally {
@@ -503,11 +514,11 @@ function App() {
         <div className="success-box">
           <div className="success-icon">✓</div>
 
-          <h2>{returningFromPayment ? "Проверяем оплату" : "Завершите оплату"}</h2>
+          <h2>Оплата принята</h2>
           <h3>Заказ №{orderNumber}</h3>
 
           <p>
-            После подтверждения ЮKassa статус заказа изменится автоматически.
+            CloudPayments подтверждает платёж.
             <br />
             Уведомление придёт в Telegram.
           </p>
