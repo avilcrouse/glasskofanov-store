@@ -23,6 +23,7 @@ export default function Admin() {
   const [section, setSection] = useState("orders");
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [login, setLogin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
@@ -223,6 +224,55 @@ export default function Admin() {
     await loadProducts();
   }
 
+  async function uploadProductImage(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Выберите фотографию");
+      return;
+    }
+
+    setUploadingImage(true);
+    setError("");
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const sourceImage = new Image();
+      sourceImage.onload = async () => {
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(sourceImage.width, sourceImage.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(sourceImage.width * scale);
+        canvas.height = Math.round(sourceImage.height * scale);
+        canvas.getContext("2d").drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+        const preparedImage = canvas.toDataURL("image/jpeg", 0.85);
+
+      const response = await fetch("/api/product-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: preparedImage, type: "image/jpeg" }),
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        setProductForm((current) => ({ ...current, image: result.url }));
+      } else {
+        setError(result.error || "Не удалось загрузить фотографию");
+      }
+      setUploadingImage(false);
+      };
+      sourceImage.onerror = () => {
+        setError("Не удалось обработать фотографию");
+        setUploadingImage(false);
+      };
+      sourceImage.src = reader.result;
+    };
+    reader.onerror = () => {
+      setError("Не удалось прочитать фотографию");
+      setUploadingImage(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <div className="admin">
       <div className="page-heading">
@@ -293,14 +343,22 @@ export default function Admin() {
                 setProductForm({ ...productForm, description: event.target.value })
               }
             />
-            <input
-              type="url"
-              placeholder="Ссылка на фотографию"
-              value={productForm.image}
-              onChange={(event) =>
-                setProductForm({ ...productForm, image: event.target.value })
-              }
-            />
+            <label className="image-upload">
+              <span>{uploadingImage ? "Загружаем фотографию…" : "Выбрать фотографию"}</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={uploadingImage}
+                onChange={(event) => uploadProductImage(event.target.files?.[0])}
+              />
+            </label>
+            {productForm.image && (
+              <img
+                className="product-image-preview"
+                src={productForm.image}
+                alt="Предпросмотр товара"
+              />
+            )}
             <label className="top-product-checkbox">
               <input
                 type="checkbox"
@@ -312,7 +370,7 @@ export default function Admin() {
               Показывать в топовых моделях
             </label>
             <div className="admin-buttons">
-              <button type="submit">
+              <button type="submit" disabled={uploadingImage}>
                 {editingProductId ? "Сохранить" : "Добавить товар"}
               </button>
               {editingProductId && (
