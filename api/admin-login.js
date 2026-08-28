@@ -1,3 +1,5 @@
+import { adminCookie, createAdminSession } from "./admin-auth.js";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -7,13 +9,16 @@ export default async function handler(req, res) {
 
   const { password } = req.body;
 
-  if (password === process.env.ADMIN_PASSWORD) {
+  if (process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD) {
+    res.setHeader("Set-Cookie", adminCookie(createAdminSession()));
+
     return res.json({
       success: true,
     });
   }
 
-  return res.json({
+  return res.status(401).json({
     success: false,
+    error: "Неверный пароль",
   });
 }

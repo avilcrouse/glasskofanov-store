@@ -39,7 +39,9 @@ const products = [
 
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
-  const [page, setPage] = useState("home");
+  const [page, setPage] = useState(() =>
+    window.location.hash === "#admin" ? "admin" : "home",
+  );
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cart, setCart] = useState([]);
   const [sending, setSending] = useState(false);
@@ -515,13 +517,6 @@ function App() {
           Профиль
         </button>
 
-        <button
-          className={page === "admin" ? "active" : ""}
-          onClick={() => setPage("admin")}
-        >
-          <span>⚙</span>
-          Админка
-        </button>
       </nav>
     </div>
   );
