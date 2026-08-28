@@ -122,16 +122,7 @@ ${total} ₽
     message_id: telegramData.result.message_id,
   });
   // сохраняем заказ в Supabase
-  const { data, error } = await supabase.from("orders").insert({
-    telegram_chat_id: Number(admin),
-
-    telegram_message_id: telegramData.result?.message_id
-      ? Number(telegramData.result.message_id)
-      : null,
-
-    customer_chat_id: chatId ? Number(chatId) : null,
-
-    customer_message_id: customerMessageId,
+  const { error } = await supabase.from("orders").insert({
     order_number: orderNumber,
     name,
     phone,
@@ -141,7 +132,6 @@ ${total} ₽
     cart,
     total,
     status: "Новый",
-
     telegram_chat_id: Number(admin),
     telegram_message_id: telegramData.result?.message_id
       ? Number(telegramData.result.message_id)

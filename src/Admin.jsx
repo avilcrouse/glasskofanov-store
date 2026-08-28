@@ -3,17 +3,36 @@ import supabase from "./supabaseClient";
 
 export default function Admin() {
   const [orders, setOrders] = useState([]);
-  const [login, setLogin] = useState(
-    localStorage.getItem("admin_login") === "true",
-  );
+  const [login, setLogin] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  async function loadOrders() {
+    const response = await fetch("/api/orders");
+
+    if (response.status === 401) {
+      setLogin(false);
+      return false;
+    }
+
+    if (!response.ok) {
+      setError("Не удалось загрузить заказы");
+      return false;
+    }
+
+    setOrders(await response.json());
+    return true;
+  }
+
+  useEffect(() => {
+    loadOrders().then((authorized) => {
+      setLogin(authorized);
+      setCheckingSession(false);
+    });
+  }, []);
+
   useEffect(() => {
     if (!login) return;
-
-    fetch("/api/orders")
-      .then((res) => res.json())
-      .then((data) => setOrders(data));
 
     const channel = supabase
       .channel("orders-changes")
@@ -26,10 +45,7 @@ export default function Admin() {
         },
         (payload) => {
           console.log("REALTIME EVENT:", payload);
-          console.log("REALTIME EVENT:", payload);
-          fetch("/api/orders")
-            .then((res) => res.json())
-            .then((data) => setOrders(data));
+          loadOrders();
         },
       )
       .subscribe((status) => {
@@ -40,6 +56,10 @@ export default function Admin() {
       supabase.removeChannel(channel);
     };
   }, [login]);
+
+  if (checkingSession) {
+    return <div className="admin-login">Проверяем доступ…</div>;
+  }
 
   if (!login) {
     return (
@@ -70,9 +90,11 @@ export default function Admin() {
             const data = await res.json();
 
             if (data.success) {
-              localStorage.setItem("admin_login", "true");
-
               setLogin(true);
+              setError("");
+              await loadOrders();
+            } else {
+              setError(data.error || "Неверный пароль");
             }
           }}
         >
@@ -113,6 +135,8 @@ export default function Admin() {
             : order,
         ),
       );
+    } else {
+      setError(result.error || "Не удалось изменить статус");
     }
   }
   return (
@@ -121,8 +145,8 @@ export default function Admin() {
         <h2>
           Заказы
           <button
-            onClick={() => {
-              localStorage.removeItem("admin_login");
+            onClick={async () => {
+              await fetch("/api/admin-logout", { method: "POST" });
               setLogin(false);
             }}
           >
@@ -130,6 +154,7 @@ export default function Admin() {
           </button>
         </h2>
         <p>Управление заказами магазина</p>
+        {error && <p>{error}</p>}
       </div>
 
       <div className="orders-list">
