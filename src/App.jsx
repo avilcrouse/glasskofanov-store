@@ -2,38 +2,49 @@ import Admin from "./Admin.jsx";
 import { useEffect, useState } from "react";
 import "./App.css";
 
-const products = [
+const categories = [
+  "Очки корригирующие",
+  "Очки солнцезащитные",
+  "Очки для водителя",
+  "Очки спортивные",
+];
+
+const initialProducts = [
   {
     id: 1,
     name: "Kofanov Classic Black",
     price: 4990,
-    category: "Солнцезащитные",
+    category: "Очки солнцезащитные",
     description: "Лёгкая классическая оправа на каждый день.",
     image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900",
+    is_top: true,
   },
   {
     id: 2,
     name: "Kofanov Silver",
     price: 5990,
-    category: "Мужские",
+    category: "Очки корригирующие",
     description: "Современная модель с универсальной посадкой.",
     image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=900",
+    is_top: true,
   },
   {
     id: 3,
     name: "Kofanov Brown",
     price: 4490,
-    category: "Классические",
+    category: "Очки для водителя",
     description: "Тёплый оттенок оправы и минималистичный дизайн.",
     image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=900",
+    is_top: true,
   },
   {
     id: 4,
     name: "Kofanov Premium",
     price: 7990,
-    category: "Premium",
+    category: "Очки спортивные",
     description: "Премиальная модель с акцентом на детали.",
     image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900",
+    is_top: true,
   },
 ];
 
@@ -43,6 +54,8 @@ function App() {
     window.location.hash === "#admin" ? "admin" : "home",
   );
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
+  const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]);
   const [sending, setSending] = useState(false);
   const [checkout, setCheckout] = useState(false);
@@ -70,6 +83,20 @@ function App() {
     if (user) {
       setTelegramUser(user);
     }
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((response) => {
+        if (!response.ok) throw new Error("Products are unavailable");
+        return response.json();
+      })
+      .then((data) => {
+        if (data.length > 0) setProducts(data);
+      })
+      .catch(() => {
+        // До создания таблицы Supabase показываем начальные товары.
+      });
   }, []);
 
   const addToCart = (product) => {
@@ -119,14 +146,19 @@ function App() {
     0,
   );
 
+  const selectedCategoryProducts = products.filter(
+    (product) => product.category === selectedCategory,
+  );
+  const topProducts = products.filter((product) => product.is_top).slice(0, 4);
+
   const openProduct = (product) => {
     setSelectedProduct(product);
     setPage("product");
   };
 
-  const renderProducts = () => (
+  const renderProducts = (productList = products) => (
     <div className="products">
-      {products.map((product) => (
+      {productList.map((product) => (
         <article
           className="product-card"
           key={product.id}
@@ -186,11 +218,11 @@ function App() {
 
           <main>
             <div className="catalog-title">
-              <h2>Каталог</h2>
+              <h2>Топовые модели</h2>
               <span>{products.length} модели</span>
             </div>
 
-            {renderProducts()}
+            {renderProducts(topProducts.length > 0 ? topProducts : products.slice(0, 4))}
           </main>
         </>
       )}
@@ -199,10 +231,30 @@ function App() {
         <main>
           <div className="page-heading">
             <h2>Каталог</h2>
-            <p>Все модели Glass Kofanov</p>
+            <p>Выберите нужный раздел</p>
           </div>
 
-          {renderProducts()}
+          <div className="catalog-categories">
+            {categories.map((category) => (
+              <button
+                className={selectedCategory === category ? "active" : ""}
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="catalog-section-heading">
+            <h3>{selectedCategory}</h3>
+            <span>
+              {selectedCategoryProducts.length}{" "}
+              {selectedCategoryProducts.length === 1 ? "модель" : "модели"}
+            </span>
+          </div>
+
+          {renderProducts(selectedCategoryProducts)}
         </main>
       )}
 

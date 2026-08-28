@@ -114,6 +114,48 @@ main {
   margin-top: 7px;
 }
 
+.catalog-categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.catalog-categories button {
+  min-height: 64px;
+  padding: 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 14px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.catalog-categories button.active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.catalog-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.catalog-section-heading h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.catalog-section-heading span {
+  color: #999;
+  font-size: 13px;
+}
+
 .products {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -536,6 +578,96 @@ main {
 }
 .admin {
   padding: 20px;
+}
+
+.admin-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 5px;
+  border-radius: 14px;
+  background: #f1f1f1;
+}
+
+.admin-tabs button {
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.admin-tabs button.active {
+  background: #111;
+  color: #fff;
+}
+
+.product-admin-form {
+  margin-bottom: 24px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #f7f7f7;
+}
+
+.product-admin-form h3 {
+  margin-top: 0;
+}
+
+.product-admin-form input:not([type="checkbox"]),
+.product-admin-form select,
+.product-admin-form textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 11px;
+  background: #fff;
+  font: inherit;
+}
+
+.product-admin-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.top-product-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0;
+}
+
+.admin-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-product-card {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 16px;
+}
+
+.admin-product-card img {
+  width: 110px;
+  height: 110px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.admin-product-card h3 {
+  margin: 5px 0;
+}
+
+.admin-product-card span,
+.admin-product-card p {
+  color: #777;
+  font-size: 12px;
 }
 
 .orders-list {
