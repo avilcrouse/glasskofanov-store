@@ -9,6 +9,7 @@ const categories = [
 ];
 
 const emptyProduct = {
+  sku: "",
   name: "",
   price: "",
   category: categories[0],
@@ -23,6 +24,8 @@ export default function Admin() {
   const [section, setSection] = useState("orders");
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [productCategoryFilter, setProductCategoryFilter] = useState("all");
+  const [productSkuSearch, setProductSkuSearch] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [login, setLogin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -196,6 +199,7 @@ export default function Admin() {
   function editProduct(product) {
     setEditingProductId(product.id);
     setProductForm({
+      sku: product.sku || "",
       name: product.name,
       price: String(product.price),
       category: product.category,
@@ -273,6 +277,16 @@ export default function Admin() {
     reader.readAsDataURL(file);
   }
 
+  const normalizedSkuSearch = productSkuSearch.trim().toLocaleLowerCase("ru-RU");
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      productCategoryFilter === "all" || product.category === productCategoryFilter;
+    const matchesSku =
+      !normalizedSkuSearch ||
+      product.sku?.toLocaleLowerCase("ru-RU").includes(normalizedSkuSearch);
+    return matchesCategory && matchesSku;
+  });
+
   return (
     <div className="admin">
       <div className="page-heading">
@@ -310,6 +324,13 @@ export default function Admin() {
         <>
           <form className="product-admin-form" onSubmit={saveProduct}>
             <h3>{editingProductId ? "Редактировать товар" : "Новый товар"}</h3>
+            <input
+              placeholder="Внутренний артикул"
+              value={productForm.sku}
+              onChange={(event) =>
+                setProductForm({ ...productForm, sku: event.target.value })
+              }
+            />
             <input
               placeholder="Название"
               value={productForm.name}
@@ -387,12 +408,33 @@ export default function Admin() {
             </div>
           </form>
 
+          <div className="admin-product-filters">
+            <select
+              aria-label="Фильтр товаров по категории"
+              value={productCategoryFilter}
+              onChange={(event) => setProductCategoryFilter(event.target.value)}
+            >
+              <option value="all">Все категории</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <input
+              type="search"
+              aria-label="Поиск товаров по артикулу"
+              placeholder="Поиск по артикулу"
+              value={productSkuSearch}
+              onChange={(event) => setProductSkuSearch(event.target.value)}
+            />
+          </div>
+
           <div className="admin-products-list">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <article className="admin-product-card" key={product.id}>
                 <img src={product.image} alt={product.name} />
                 <div>
                   <span>{product.category}</span>
+                  <p className="admin-product-sku">Артикул: {product.sku}</p>
                   <h3>{product.name}</h3>
                   <strong>{Number(product.price).toLocaleString("ru-RU")} ₽</strong>
                   {product.is_top && <p>⭐ Топовая модель</p>}
@@ -403,6 +445,9 @@ export default function Admin() {
                 </div>
               </article>
             ))}
+            {filteredProducts.length === 0 && (
+              <p className="admin-products-empty">Товары не найдены</p>
+            )}
           </div>
         </>
       )}
@@ -506,3 +551,4 @@ export default function Admin() {
     </div>
   );
 }
+
