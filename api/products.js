@@ -8,7 +8,20 @@ const categories = [
   "Очки спортивные",
 ];
 
+const publicProductFields = [
+  "id",
+  "name",
+  "price",
+  "category",
+  "description",
+  "image",
+  "is_top",
+  "active",
+  "created_at",
+].join(",");
+
 function validateProduct(product) {
+  if (!product.sku?.trim()) return "Укажите артикул товара";
   if (!product.name?.trim()) return "Укажите название товара";
   if (!Number.isFinite(Number(product.price)) || Number(product.price) <= 0) {
     return "Цена должна быть больше нуля";
@@ -20,9 +33,10 @@ function validateProduct(product) {
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
+    const isAdmin = isAdminRequest(req);
     const { data, error } = await supabase
       .from("products")
-      .select("*")
+      .select(isAdmin ? "*" : publicProductFields)
       .eq("active", true)
       .order("created_at", { ascending: true });
 
@@ -39,6 +53,7 @@ export default async function handler(req, res) {
     if (validationError) return res.status(400).json({ error: validationError });
 
     const product = {
+      sku: req.body.sku.trim(),
       name: req.body.name.trim(),
       price: Number(req.body.price),
       category: req.body.category,
@@ -54,6 +69,9 @@ export default async function handler(req, res) {
         : supabase.from("products").update(product).eq("id", req.body.id);
     const { data, error } = await query.select().single();
 
+    if (error?.code === "23505") {
+      return res.status(409).json({ error: "Товар с таким артикулом уже существует" });
+    }
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   }
@@ -72,3 +90,4 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: "Method not allowed" });
 }
+
