@@ -15,20 +15,33 @@ const publicProductFields = [
   "category",
   "description",
   "image",
+  "images",
   "is_top",
   "active",
   "created_at",
 ].join(",");
 
 function validateProduct(product) {
+  const images = normalizeImages(product);
   if (!product.sku?.trim()) return "Укажите артикул товара";
   if (!product.name?.trim()) return "Укажите название товара";
   if (!Number.isFinite(Number(product.price)) || Number(product.price) <= 0) {
     return "Цена должна быть больше нуля";
   }
   if (!categories.includes(product.category)) return "Выберите категорию";
-  if (!product.image?.trim()) return "Добавьте ссылку на фотографию";
+  if (images.length === 0) return "Добавьте хотя бы одну фотографию";
   return null;
+}
+
+function normalizeImages(product) {
+  const submittedImages = Array.isArray(product.images) ? product.images : [];
+  const images = submittedImages
+    .filter((image) => typeof image === "string")
+    .map((image) => image.trim())
+    .filter(Boolean);
+
+  if (images.length === 0 && product.image?.trim()) images.push(product.image.trim());
+  return [...new Set(images)];
 }
 
 export default async function handler(req, res) {
@@ -52,13 +65,16 @@ export default async function handler(req, res) {
     const validationError = validateProduct(req.body);
     if (validationError) return res.status(400).json({ error: validationError });
 
+    const images = normalizeImages(req.body);
+
     const product = {
       sku: req.body.sku.trim(),
       name: req.body.name.trim(),
       price: Number(req.body.price),
       category: req.body.category,
       description: req.body.description?.trim() || "",
-      image: req.body.image.trim(),
+      image: images[0],
+      images,
       is_top: Boolean(req.body.is_top),
       active: true,
     };

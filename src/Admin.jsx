@@ -15,6 +15,7 @@ const emptyProduct = {
   category: categories[0],
   description: "",
   image: "",
+  images: [],
   is_top: false,
 };
 
@@ -205,6 +206,7 @@ export default function Admin() {
       category: product.category,
       description: product.description || "",
       image: product.image,
+      images: product.images?.length ? product.images : [product.image],
       is_top: product.is_top,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -228,53 +230,73 @@ export default function Admin() {
     await loadProducts();
   }
 
-  async function uploadProductImage(file) {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Выберите фотографию");
+  async function prepareAndUploadProductImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const sourceImage = new Image();
+        sourceImage.onload = async () => {
+          try {
+            const maxSide = 1600;
+            const scale = Math.min(1, maxSide / Math.max(sourceImage.width, sourceImage.height));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(sourceImage.width * scale);
+            canvas.height = Math.round(sourceImage.height * scale);
+            canvas.getContext("2d").drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+            const preparedImage = canvas.toDataURL("image/jpeg", 0.85);
+            const response = await fetch("/api/product-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: preparedImage, type: "image/jpeg" }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Не удалось загрузить фотографию");
+            resolve(result.url);
+          } catch (uploadError) {
+            reject(uploadError);
+          }
+        };
+        sourceImage.onerror = () => reject(new Error("Не удалось обработать фотографию"));
+        sourceImage.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error("Не удалось прочитать фотографию"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadProductImages(fileList) {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    if (files.some((file) => !file.type.startsWith("image/"))) {
+      setError("Выберите фотографии в формате JPEG, PNG или WebP");
+      return;
+    }
+
+    if (productForm.images.length + files.length > 8) {
+      setError("Для одного товара можно добавить не более 8 фотографий");
       return;
     }
 
     setUploadingImage(true);
     setError("");
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const sourceImage = new Image();
-      sourceImage.onload = async () => {
-        const maxSide = 1600;
-        const scale = Math.min(1, maxSide / Math.max(sourceImage.width, sourceImage.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(sourceImage.width * scale);
-        canvas.height = Math.round(sourceImage.height * scale);
-        canvas.getContext("2d").drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
-        const preparedImage = canvas.toDataURL("image/jpeg", 0.85);
-
-      const response = await fetch("/api/product-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: preparedImage, type: "image/jpeg" }),
+    try {
+      const uploadedImages = await Promise.all(files.map(prepareAndUploadProductImage));
+      setProductForm((current) => {
+        const images = [...current.images, ...uploadedImages];
+        return { ...current, images, image: images[0] || "" };
       });
-      const result = await response.json();
+    } catch (uploadError) {
+      setError(uploadError.message || "Не удалось загрузить фотографии");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
-      if (response.ok) {
-        setProductForm((current) => ({ ...current, image: result.url }));
-      } else {
-        setError(result.error || "Не удалось загрузить фотографию");
-      }
-      setUploadingImage(false);
-      };
-      sourceImage.onerror = () => {
-        setError("Не удалось обработать фотографию");
-        setUploadingImage(false);
-      };
-      sourceImage.src = reader.result;
-    };
-    reader.onerror = () => {
-      setError("Не удалось прочитать фотографию");
-      setUploadingImage(false);
-    };
-    reader.readAsDataURL(file);
+  function removeProductImage(imageToRemove) {
+    setProductForm((current) => {
+      const images = current.images.filter((image) => image !== imageToRemove);
+      return { ...current, images, image: images[0] || "" };
+    });
   }
 
   const normalizedSkuSearch = productSkuSearch.trim().toLocaleLowerCase("ru-RU");
@@ -365,20 +387,34 @@ export default function Admin() {
               }
             />
             <label className="image-upload">
-              <span>{uploadingImage ? "Загружаем фотографию…" : "Выбрать фотографию"}</span>
+              <span>{uploadingImage ? "Загружаем фотографии…" : "Выбрать фотографии"}</span>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
+                multiple
                 disabled={uploadingImage}
-                onChange={(event) => uploadProductImage(event.target.files?.[0])}
+                onChange={(event) => {
+                  uploadProductImages(event.target.files);
+                  event.target.value = "";
+                }}
               />
             </label>
-            {productForm.image && (
-              <img
-                className="product-image-preview"
-                src={productForm.image}
-                alt="Предпросмотр товара"
-              />
+            {productForm.images.length > 0 && (
+              <div className="product-image-previews">
+                {productForm.images.map((image, index) => (
+                  <div className="product-image-preview" key={image}>
+                    <img src={image} alt={`Фотография товара ${index + 1}`} />
+                    <button
+                      type="button"
+                      aria-label={`Удалить фотографию ${index + 1}`}
+                      onClick={() => removeProductImage(image)}
+                    >
+                      ×
+                    </button>
+                    {index === 0 && <span>Главная</span>}
+                  </div>
+                ))}
+              </div>
             )}
             <label className="top-product-checkbox">
               <input

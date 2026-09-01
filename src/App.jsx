@@ -17,6 +17,7 @@ const initialProducts = [
     category: "Очки солнцезащитные",
     description: "Лёгкая классическая оправа на каждый день.",
     image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900",
+    images: ["https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900"],
     is_top: true,
   },
   {
@@ -26,6 +27,7 @@ const initialProducts = [
     category: "Очки корригирующие",
     description: "Современная модель с универсальной посадкой.",
     image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=900",
+    images: ["https://images.unsplash.com/photo-1577803645773-f96470509666?w=900"],
     is_top: true,
   },
   {
@@ -35,6 +37,7 @@ const initialProducts = [
     category: "Очки для водителя",
     description: "Тёплый оттенок оправы и минималистичный дизайн.",
     image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=900",
+    images: ["https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=900"],
     is_top: true,
   },
   {
@@ -44,6 +47,7 @@ const initialProducts = [
     category: "Очки спортивные",
     description: "Премиальная модель с акцентом на детали.",
     image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900",
+    images: ["https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900"],
     is_top: true,
   },
 ];
@@ -54,6 +58,7 @@ function App() {
     window.location.hash === "#admin" ? "admin" : "home",
   );
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [activeProductImage, setActiveProductImage] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]);
@@ -156,6 +161,7 @@ function App() {
 
   const openProduct = (product) => {
     setSelectedProduct(product);
+    setActiveProductImage(product.images?.[0] || product.image);
     setPage("product");
   };
 
@@ -269,9 +275,25 @@ function App() {
 
           <img
             className="product-main-image"
-            src={selectedProduct.image}
+            src={activeProductImage || selectedProduct.image}
             alt={selectedProduct.name}
           />
+
+          {(selectedProduct.images?.length || 0) > 1 && (
+            <div className="product-gallery" aria-label="Фотографии товара">
+              {selectedProduct.images.map((image, index) => (
+                <button
+                  type="button"
+                  className={image === activeProductImage ? "active" : ""}
+                  key={image}
+                  aria-label={`Показать фотографию ${index + 1}`}
+                  onClick={() => setActiveProductImage(image)}
+                >
+                  <img src={image} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
 
           <span className="category">{selectedProduct.category}</span>
 
