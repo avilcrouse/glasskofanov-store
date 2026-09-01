@@ -6,6 +6,7 @@ const categories = [
   "Очки солнцезащитные",
   "Очки для водителя",
   "Очки спортивные",
+  "Очки имиджевые",
 ];
 
 const emptyProduct = {
@@ -28,6 +29,7 @@ export default function Admin() {
   const [productCategoryFilter, setProductCategoryFilter] = useState("all");
   const [productSkuSearch, setProductSkuSearch] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [draggedImageIndex, setDraggedImageIndex] = useState(null);
   const [login, setLogin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
@@ -299,6 +301,16 @@ export default function Admin() {
     });
   }
 
+  function reorderProductImages(fromIndex, toIndex) {
+    if (fromIndex === toIndex) return;
+    setProductForm((current) => {
+      const images = [...current.images];
+      const [movedImage] = images.splice(fromIndex, 1);
+      images.splice(toIndex, 0, movedImage);
+      return { ...current, images, image: images[0] || "" };
+    });
+  }
+
   const normalizedSkuSearch = productSkuSearch.trim().toLocaleLowerCase("ru-RU");
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
@@ -400,9 +412,35 @@ export default function Admin() {
               />
             </label>
             {productForm.images.length > 0 && (
-              <div className="product-image-previews">
+              <>
+                <p className="product-images-hint">
+                  Перетащите фотографии, чтобы изменить порядок. Первая будет главной.
+                </p>
+                <div className="product-image-previews">
                 {productForm.images.map((image, index) => (
-                  <div className="product-image-preview" key={image}>
+                  <div
+                    className={`product-image-preview ${
+                      draggedImageIndex === index ? "dragging" : ""
+                    }`}
+                    draggable
+                    key={image}
+                    onDragStart={(event) => {
+                      setDraggedImageIndex(index);
+                      event.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (draggedImageIndex !== null) {
+                        reorderProductImages(draggedImageIndex, index);
+                      }
+                      setDraggedImageIndex(null);
+                    }}
+                    onDragEnd={() => setDraggedImageIndex(null)}
+                  >
                     <img src={image} alt={`Фотография товара ${index + 1}`} />
                     <button
                       type="button"
@@ -414,7 +452,8 @@ export default function Admin() {
                     {index === 0 && <span>Главная</span>}
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
             <label className="top-product-checkbox">
               <input

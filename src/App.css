@@ -692,8 +692,25 @@ main {
   margin-bottom: 12px;
 }
 
+.product-images-hint {
+  margin: 0 0 9px;
+  color: #777;
+  font-size: 12px;
+}
+
 .product-image-preview {
   position: relative;
+  cursor: grab;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.product-image-preview:active {
+  cursor: grabbing;
+}
+
+.product-image-preview.dragging {
+  opacity: 0.45;
+  transform: scale(0.96);
 }
 
 .product-image-preview img {
