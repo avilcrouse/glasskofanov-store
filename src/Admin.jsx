@@ -390,7 +390,7 @@ export default function Admin() {
       });
       if (!imported.length) throw new Error("В Excel-файле нет товаров");
       if (!window.confirm("Загрузить " + imported.length + " товаров? Совпадающие артикулы будут обновлены.")) return;
-      const response = await fetch("/api/products-import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ products: imported }) });
+      const response = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ products: imported }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       await loadProducts();
