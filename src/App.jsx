@@ -70,6 +70,13 @@ function App() {
   const [checkout, setCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState(null);
+  const [deliveryType, setDeliveryType] = useState("courier");
+  const [pickupPoints, setPickupPoints] = useState([]);
+  const [selectedPickupPointCode, setSelectedPickupPointCode] = useState("");
+  const [pointsLoading, setPointsLoading] = useState(false);
+  const [customerOrders, setCustomerOrders] = useState([]);
+  const [customerOrdersLoading, setCustomerOrdersLoading] = useState(false);
+  const [customerOrdersError, setCustomerOrdersError] = useState("");
   const [orderData, setOrderData] = useState({
     name: "",
     phone: "",
@@ -93,6 +100,48 @@ function App() {
       setTelegramUser(user);
     }
   }, []);
+
+  useEffect(() => {
+    if (page !== "profile") return;
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setCustomerOrdersLoading(true);
+    setCustomerOrdersError("");
+    fetch("/api/customer-orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData }),
+    })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        setCustomerOrders(result);
+      })
+      .catch((error) => setCustomerOrdersError(error.message || "Не удалось загрузить заказы"))
+      .finally(() => setCustomerOrdersLoading(false));
+  }, [page, orderSuccess]);
+
+  async function loadPickupPoints() {
+    if (orderData.city.trim().length < 2) {
+      setCheckoutError("Сначала укажите город");
+      return;
+    }
+    setPointsLoading(true);
+    setCheckoutError("");
+    setPickupPoints([]);
+    setSelectedPickupPointCode("");
+    try {
+      const response = await fetch("/api/pickup-points?provider=" + deliveryType + "&city=" + encodeURIComponent(orderData.city.trim()));
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setPickupPoints(result);
+      if (!result.length) setCheckoutError("В этом городе пункты выдачи не найдены");
+    } catch (error) {
+      setCheckoutError(error.message || "Не удалось загрузить пункты выдачи");
+    } finally {
+      setPointsLoading(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/products")
@@ -424,17 +473,41 @@ function App() {
                   })
                 }
               />
+              <select
+                className="delivery-select"
+                value={deliveryType}
+                onChange={(event) => {
+                  setDeliveryType(event.target.value);
+                  setPickupPoints([]);
+                  setSelectedPickupPointCode("");
+                  setPendingOrderNumber(null);
+                  setPaymentToken(null);
+                }}
+              >
+                <option value="courier">Доставка курьером</option>
+                <option value="cdek">Пункт выдачи CDEK</option>
+                <option value="yandex">Пункт выдачи Яндекс Маркета</option>
+              </select>
 
-              <input
-                placeholder="Адрес доставки"
-                value={orderData.address}
-                onChange={(e) =>
-                  setOrderData({
-                    ...orderData,
-                    address: e.target.value,
-                  })
-                }
-              />
+              {deliveryType === "courier" ? (
+                <input
+                  placeholder="Адрес доставки"
+                  value={orderData.address}
+                  onChange={(e) => setOrderData({ ...orderData, address: e.target.value })}
+                />
+              ) : (
+                <div className="pickup-selector">
+                  <button type="button" disabled={pointsLoading} onClick={loadPickupPoints}>
+                    {pointsLoading ? "Ищем ПВЗ…" : "Найти пункты выдачи"}
+                  </button>
+                  {pickupPoints.length > 0 && (
+                    <select value={selectedPickupPointCode} onChange={(event) => { setSelectedPickupPointCode(event.target.value); setPendingOrderNumber(null); setPaymentToken(null); }}>
+                      <option value="">Выберите пункт выдачи</option>
+                      {pickupPoints.map((point) => <option key={point.code} value={point.code}>{point.address}</option>)}
+                    </select>
+                  )}
+                </div>
+              )}
 
               <button
                 className="main-button"
@@ -460,8 +533,9 @@ function App() {
                           city: orderData.city,
                           address: orderData.address,
                           cart,
-                          username: tg?.initDataUnsafe?.user?.username,
-                          chatId: tg?.initDataUnsafe?.user?.id,
+                          initData: tg?.initData || "",
+                          deliveryType,
+                          pickupPoint: pickupPoints.find((point) => String(point.code) === selectedPickupPointCode) || null,
                         }),
                       });
                       const result = await response.json();
@@ -519,6 +593,9 @@ function App() {
                       city: "",
                       address: "",
                     });
+                    setDeliveryType("courier");
+                    setPickupPoints([]);
+                    setSelectedPickupPointCode("");
                   } catch (error) {
                     setCheckoutError(error.message || "Не удалось начать оплату");
                   } finally {
@@ -594,6 +671,20 @@ function App() {
               </p>
             )}
           </div>
+          <section className="profile-orders">
+            <h2>Мои заказы</h2>
+            {customerOrdersLoading && <p>Загружаем заказы…</p>}
+            {customerOrdersError && <p className="checkout-error">{customerOrdersError}</p>}
+            {!customerOrdersLoading && telegramUser && customerOrders.length === 0 && <p>У вас пока нет заказов.</p>}
+            {customerOrders.map((order) => (
+              <article key={order.order_number}>
+                <div><strong>Заказ №{order.order_number}</strong><span>{order.status}</span></div>
+                <p>{new Date(order.created_at).toLocaleDateString("ru-RU")} · {Number(order.total).toLocaleString("ru-RU")} ₽</p>
+                <p>{order.delivery_type === "cdek" ? "CDEK" : order.delivery_type === "yandex" ? "Яндекс Маркет" : "Курьер"}{order.pickup_point_address ? ": " + order.pickup_point_address : ""}</p>
+                {order.cart?.map((item) => <p key={item.id}>{item.name} × {item.quantity}</p>)}
+              </article>
+            ))}
+          </section>
         </main>
       )}
       {page === "admin" && (

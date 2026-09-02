@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import supabase from "../lib/supabase.js";
+import { verifyTelegramInitData } from "../lib/telegram-init-data.js";
 
 console.log("SUPABASE CONNECTED");
 
@@ -10,10 +11,20 @@ export default async function handler(req, res) {
     });
   }
 
-  const { name, phone, city, address, cart, username, chatId } = req.body;
-  if (!name || !phone || !city || !address || !Array.isArray(cart) || !cart.length) {
+  const { name, phone, city, address, cart, initData, pickupPoint } = req.body;
+  const deliveryType = ["courier", "cdek", "yandex"].includes(req.body.deliveryType)
+    ? req.body.deliveryType
+    : "courier";
+  const telegramUser = initData ? verifyTelegramInitData(initData) : null;
+  if (initData && !telegramUser) return res.status(401).json({ error: "Сессия Telegram устарела. Откройте магазин заново" });
+  const pickupIsValid = deliveryType === "courier" || (pickupPoint?.code && pickupPoint?.address);
+  if (!name || !phone || !city || (deliveryType === "courier" && !address) || !pickupIsValid || !Array.isArray(cart) || !cart.length) {
     return res.status(400).json({ error: "Заполните данные и добавьте товары" });
   }
+  const username = telegramUser?.username || null;
+  const chatId = telegramUser?.id || null;
+  const deliveryAddress = deliveryType === "courier" ? address.trim() : pickupPoint.address.trim();
+  const deliveryLabel = deliveryType === "courier" ? "Курьер" : deliveryType === "cdek" ? "ПВЗ CDEK" : "ПВЗ Яндекс Маркета";
 
   const productIds = cart.map((item) => item.id);
   const { data: databaseProducts, error: productsError } = await supabase
@@ -66,8 +77,8 @@ ${phone}
 📍 Город:
 ${city}
 
-🏠 Адрес:
-${address}
+🚚 Доставка: ${deliveryLabel}
+📍 Адрес: ${deliveryAddress}
 
 
 🛒 Товары:
@@ -152,7 +163,7 @@ ${total} ₽
     name,
     phone,
     city,
-    address,
+    address: deliveryAddress,
     username,
     cart: normalizedCart,
     total,
@@ -164,8 +175,11 @@ ${total} ₽
       ? Number(telegramData.result.message_id)
       : null,
     customer_chat_id: chatId ? Number(chatId) : null,
-
     customer_message_id: customerMessageId,
+    delivery_type: deliveryType,
+    pickup_point_code: deliveryType === "courier" ? null : String(pickupPoint.code),
+    pickup_point_name: deliveryType === "courier" ? null : pickupPoint.name || deliveryLabel,
+    pickup_point_address: deliveryType === "courier" ? null : deliveryAddress,
   });
 
   if (error) {

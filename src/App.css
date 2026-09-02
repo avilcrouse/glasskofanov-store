@@ -692,6 +692,82 @@ main {
   margin-bottom: 12px;
 }
 
+.delivery-select,
+.pickup-selector select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d8d3ca;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+}
+
+.pickup-selector {
+  display: grid;
+  gap: 10px;
+}
+
+.pickup-selector button {
+  padding: 13px 16px;
+  border: 1px solid #1b1b1b;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.profile-orders {
+  margin-top: 24px;
+}
+
+.profile-orders article {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid #e6e1d8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.profile-orders article > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-orders article p {
+  margin: 8px 0 0;
+}
+
+.excel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f4f1eb;
+}
+
+.excel-actions button,
+.excel-actions label {
+  padding: 11px 15px;
+  border: 1px solid #1b1b1b;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.excel-actions input {
+  display: none;
+}
+
+.excel-actions p {
+  flex-basis: 100%;
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
+
 .product-images-hint {
   margin: 0 0 9px;
   color: #777;

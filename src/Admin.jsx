@@ -18,6 +18,7 @@ const emptyProduct = {
   image: "",
   images: [],
   is_top: false,
+  active: true,
 };
 
 export default function Admin() {
@@ -30,6 +31,7 @@ export default function Admin() {
   const [productSkuSearch, setProductSkuSearch] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [draggedImageIndex, setDraggedImageIndex] = useState(null);
+  const [processingExcel, setProcessingExcel] = useState(false);
   const [login, setLogin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
@@ -210,6 +212,7 @@ export default function Admin() {
       image: product.image,
       images: product.images?.length ? product.images : [product.image],
       is_top: product.is_top,
+      active: product.active !== false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -311,6 +314,94 @@ export default function Admin() {
     });
   }
 
+  async function exportProductsToExcel() {
+    setProcessingExcel(true);
+    setError("");
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Товары", { views: [{ state: "frozen", ySplit: 1 }] });
+      sheet.columns = [
+        { header: "Артикул", key: "sku", width: 18 },
+        { header: "Название", key: "name", width: 32 },
+        { header: "Цена", key: "price", width: 12 },
+        { header: "Категория", key: "category", width: 26 },
+        { header: "Описание", key: "description", width: 45 },
+        { header: "Фотографии", key: "images", width: 65 },
+        { header: "Топовый", key: "is_top", width: 12 },
+        { header: "Активен", key: "active", width: 12 },
+      ];
+      products.forEach((product) => sheet.addRow({
+        sku: product.sku,
+        name: product.name,
+        price: Number(product.price),
+        category: product.category,
+        description: product.description || "",
+        images: (product.images?.length ? product.images : [product.image]).filter(Boolean).join(" | "),
+        is_top: product.is_top ? "Да" : "Нет",
+        active: product.active === false ? "Нет" : "Да",
+      }));
+      sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      sheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF151515" } };
+      sheet.autoFilter = { from: "A1", to: "H" + Math.max(2, products.length + 1) };
+      const buffer = await workbook.xlsx.writeBuffer();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      link.download = "glass-kofanov-products-" + new Date().toISOString().slice(0, 10) + ".xlsx";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (excelError) {
+      setError(excelError.message || "Не удалось создать Excel-файл");
+    } finally {
+      setProcessingExcel(false);
+    }
+  }
+
+  async function importProductsFromExcel(file) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return setError("Excel-файл должен быть не больше 5 МБ");
+    setProcessingExcel(true);
+    setError("");
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const sheet = workbook.worksheets[0];
+      if (!sheet) throw new Error("В файле нет листов");
+      const expected = ["Артикул", "Название", "Цена", "Категория", "Описание", "Фотографии", "Топовый", "Активен"];
+      const headers = expected.map((_, index) => String(sheet.getRow(1).getCell(index + 1).value || "").trim());
+      if (expected.some((header, index) => headers[index] !== header)) throw new Error("Заголовки Excel изменены. Сначала скачайте актуальный шаблон");
+      if (sheet.rowCount - 1 > 500) throw new Error("Можно загрузить не более 500 товаров за один раз");
+      const asText = (value) => typeof value === "object" && value?.text ? value.text : String(value ?? "");
+      const asBoolean = (value) => ["да", "true", "1"].includes(asText(value).trim().toLocaleLowerCase("ru"));
+      const imported = [];
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1 || !row.values.slice(1).some((value) => value !== null && value !== "")) return;
+        imported.push({
+          sku: asText(row.getCell(1).value).trim(),
+          name: asText(row.getCell(2).value).trim(),
+          price: Number(row.getCell(3).value),
+          category: asText(row.getCell(4).value).trim(),
+          description: asText(row.getCell(5).value).trim(),
+          images: asText(row.getCell(6).value).split(/\s*\|\s*|\r?\n/).filter(Boolean),
+          is_top: asBoolean(row.getCell(7).value),
+          active: asText(row.getCell(8).value).trim() === "" ? true : asBoolean(row.getCell(8).value),
+        });
+      });
+      if (!imported.length) throw new Error("В Excel-файле нет товаров");
+      if (!window.confirm("Загрузить " + imported.length + " товаров? Совпадающие артикулы будут обновлены.")) return;
+      const response = await fetch("/api/products-import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ products: imported }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      await loadProducts();
+      window.alert("Готово: добавлено " + result.created + ", обновлено " + result.updated);
+    } catch (excelError) {
+      setError(excelError.message || "Не удалось прочитать Excel-файл");
+    } finally {
+      setProcessingExcel(false);
+    }
+  }
+
   const normalizedSkuSearch = productSkuSearch.trim().toLocaleLowerCase("ru-RU");
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
@@ -356,6 +447,16 @@ export default function Admin() {
 
       {section === "products" && (
         <>
+          <div className="excel-actions">
+            <button type="button" disabled={processingExcel} onClick={exportProductsToExcel}>
+              {processingExcel ? "Обработка…" : "Выгрузить Excel"}
+            </button>
+            <label>
+              Загрузить Excel
+              <input type="file" accept=".xlsx" disabled={processingExcel} onChange={(event) => { importProductsFromExcel(event.target.files?.[0]); event.target.value = ""; }} />
+            </label>
+            <p>Совпадающие артикулы обновятся, новые — добавятся. Фотографии указываются ссылками через |.</p>
+          </div>
           <form className="product-admin-form" onSubmit={saveProduct}>
             <h3>{editingProductId ? "Редактировать товар" : "Новый товар"}</h3>
             <input
@@ -556,6 +657,7 @@ export default function Admin() {
               <p>📍 {order.city}</p>
 
               <p>🏠 {order.address}</p>
+              <p>🚚 {order.delivery_type === "cdek" ? "CDEK" : order.delivery_type === "yandex" ? "Яндекс Маркет" : "Курьер"}{order.pickup_point_name ? " — " + order.pickup_point_name : ""}</p>
             </div>
 
             <div className="products">

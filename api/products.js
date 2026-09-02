@@ -1,13 +1,6 @@
 import supabase from "../lib/supabase.js";
+import { normalizeProductImages, validateProduct } from "../lib/product-data.js";
 import { isAdminRequest } from "./admin-auth.js";
-
-const categories = [
-  "Очки корригирующие",
-  "Очки солнцезащитные",
-  "Очки для водителя",
-  "Очки спортивные",
-  "Очки имиджевые",
-];
 
 const publicProductFields = [
   "id",
@@ -22,37 +15,15 @@ const publicProductFields = [
   "created_at",
 ].join(",");
 
-function validateProduct(product) {
-  const images = normalizeImages(product);
-  if (!product.sku?.trim()) return "Укажите артикул товара";
-  if (!product.name?.trim()) return "Укажите название товара";
-  if (!Number.isFinite(Number(product.price)) || Number(product.price) <= 0) {
-    return "Цена должна быть больше нуля";
-  }
-  if (!categories.includes(product.category)) return "Выберите категорию";
-  if (images.length === 0) return "Добавьте хотя бы одну фотографию";
-  return null;
-}
-
-function normalizeImages(product) {
-  const submittedImages = Array.isArray(product.images) ? product.images : [];
-  const images = submittedImages
-    .filter((image) => typeof image === "string")
-    .map((image) => image.trim())
-    .filter(Boolean);
-
-  if (images.length === 0 && product.image?.trim()) images.push(product.image.trim());
-  return [...new Set(images)];
-}
-
 export default async function handler(req, res) {
   if (req.method === "GET") {
     const isAdmin = isAdminRequest(req);
-    const { data, error } = await supabase
+    let query = supabase
       .from("products")
       .select(isAdmin ? "*" : publicProductFields)
-      .eq("active", true)
       .order("created_at", { ascending: true });
+    if (!isAdmin) query = query.eq("active", true);
+    const { data, error } = await query;
 
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
@@ -66,7 +37,7 @@ export default async function handler(req, res) {
     const validationError = validateProduct(req.body);
     if (validationError) return res.status(400).json({ error: validationError });
 
-    const images = normalizeImages(req.body);
+    const images = normalizeProductImages(req.body);
 
     const product = {
       sku: req.body.sku.trim(),
@@ -77,7 +48,7 @@ export default async function handler(req, res) {
       image: images[0],
       images,
       is_top: Boolean(req.body.is_top),
-      active: true,
+      active: req.body.active === undefined ? true : Boolean(req.body.active),
     };
 
     const query =
