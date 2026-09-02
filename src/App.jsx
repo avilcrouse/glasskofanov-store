@@ -486,7 +486,6 @@ function App() {
               >
                 <option value="courier">Доставка курьером</option>
                 <option value="cdek">Пункт выдачи CDEK</option>
-                <option value="yandex">Пункт выдачи Яндекс Маркета</option>
               </select>
 
               {deliveryType === "courier" ? (
