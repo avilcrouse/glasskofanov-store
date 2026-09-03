@@ -1,5 +1,5 @@
 import Admin from "./Admin.jsx";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 
 const categories = [
@@ -83,9 +83,12 @@ function App() {
   const [pickupPoints, setPickupPoints] = useState([]);
   const [selectedPickupPointCode, setSelectedPickupPointCode] = useState("");
   const [pointsLoading, setPointsLoading] = useState(false);
+  const [pickupPointSearch, setPickupPointSearch] = useState("");
+  const [loadedPickupCity, setLoadedPickupCity] = useState("");
   const [customerOrders, setCustomerOrders] = useState([]);
   const [customerOrdersLoading, setCustomerOrdersLoading] = useState(false);
   const [customerOrdersError, setCustomerOrdersError] = useState("");
+  const pickupRequestId = useRef(0);
   const [orderData, setOrderData] = useState({
     name: "",
     phone: "",
@@ -130,27 +133,40 @@ function App() {
       .finally(() => setCustomerOrdersLoading(false));
   }, [page, orderSuccess]);
 
-  async function loadPickupPoints() {
-    if (orderData.city.trim().length < 2) {
+  const loadPickupPoints = useCallback(async (city) => {
+    const normalizedCity = city.trim();
+    if (normalizedCity.length < 2) {
       setCheckoutError("Сначала укажите город");
       return;
     }
+    const requestId = pickupRequestId.current + 1;
+    pickupRequestId.current = requestId;
     setPointsLoading(true);
     setCheckoutError("");
     setPickupPoints([]);
     setSelectedPickupPointCode("");
     try {
-      const response = await fetch("/api/pickup-points?provider=" + deliveryType + "&city=" + encodeURIComponent(orderData.city.trim()));
+      const response = await fetch("/api/pickup-points?provider=" + deliveryType + "&city=" + encodeURIComponent(normalizedCity));
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
+      if (requestId !== pickupRequestId.current) return;
       setPickupPoints(result);
+      setLoadedPickupCity(normalizedCity);
       if (!result.length) setCheckoutError("В этом городе пункты выдачи не найдены");
     } catch (error) {
+      if (requestId !== pickupRequestId.current) return;
       setCheckoutError(error.message || "Не удалось загрузить пункты выдачи");
     } finally {
-      setPointsLoading(false);
+      if (requestId === pickupRequestId.current) setPointsLoading(false);
     }
-  }
+  }, [deliveryType]);
+
+  useEffect(() => {
+    const city = orderData.city.trim();
+    if (deliveryType !== "cdek" || city.length < 2 || city === loadedPickupCity) return;
+    const timeout = window.setTimeout(() => loadPickupPoints(city), 700);
+    return () => window.clearTimeout(timeout);
+  }, [deliveryType, orderData.city, loadedPickupCity, loadPickupPoints]);
 
   useEffect(() => {
     fetch("/api/products")
@@ -183,6 +199,14 @@ function App() {
       return [...currentCart, { ...product, quantity: 1 }];
     });
   };
+
+  const normalizedPickupSearch = pickupPointSearch.trim().toLocaleLowerCase("ru-RU");
+  const filteredPickupPoints = pickupPoints.filter((point) =>
+    !normalizedPickupSearch ||
+    [point.name, point.address, point.workTime]
+      .filter(Boolean)
+      .some((value) => value.toLocaleLowerCase("ru-RU").includes(normalizedPickupSearch)),
+  );
 
   const increaseQuantity = (id) => {
     setCart((currentCart) =>
@@ -489,6 +513,8 @@ function App() {
                   setDeliveryType(event.target.value);
                   setPickupPoints([]);
                   setSelectedPickupPointCode("");
+                  setPickupPointSearch("");
+                  setLoadedPickupCity("");
                   setPendingOrderNumber(null);
                   setPaymentToken(null);
                 }}
@@ -505,14 +531,48 @@ function App() {
                 />
               ) : (
                 <div className="pickup-selector">
-                  <button type="button" disabled={pointsLoading} onClick={loadPickupPoints}>
-                    {pointsLoading ? "Ищем ПВЗ…" : "Найти пункты выдачи"}
+                  <button type="button" disabled={pointsLoading} onClick={() => loadPickupPoints(orderData.city)}>
+                    {pointsLoading ? "Ищем ПВЗ…" : pickupPoints.length ? "Обновить список ПВЗ" : "Найти пункты выдачи"}
                   </button>
                   {pickupPoints.length > 0 && (
-                    <select value={selectedPickupPointCode} onChange={(event) => { setSelectedPickupPointCode(event.target.value); setPendingOrderNumber(null); setPaymentToken(null); }}>
-                      <option value="">Выберите пункт выдачи</option>
-                      {pickupPoints.map((point) => <option key={point.code} value={point.code}>{point.address}</option>)}
-                    </select>
+                    <>
+                      <input
+                        type="search"
+                        className="pickup-search"
+                        placeholder="Поиск по улице или названию ПВЗ"
+                        value={pickupPointSearch}
+                        onChange={(event) => setPickupPointSearch(event.target.value)}
+                      />
+                      <p className="pickup-results-count">
+                        Найдено: {filteredPickupPoints.length}
+                      </p>
+                      <div className="pickup-point-list">
+                        {filteredPickupPoints.map((point) => {
+                          const selected = String(point.code) === selectedPickupPointCode;
+                          return (
+                            <button
+                              type="button"
+                              className={selected ? "pickup-point-card selected" : "pickup-point-card"}
+                              aria-pressed={selected}
+                              key={point.code}
+                              onClick={() => {
+                                setSelectedPickupPointCode(String(point.code));
+                                setPendingOrderNumber(null);
+                                setPaymentToken(null);
+                              }}
+                            >
+                              <strong>{point.address}</strong>
+                              <span>{point.name}</span>
+                              {point.workTime && <small>{point.workTime}</small>}
+                              {selected && <b>✓ Выбрано</b>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {filteredPickupPoints.length === 0 && (
+                        <p className="pickup-empty">По вашему запросу ПВЗ не найдены</p>
+                      )}
+                    </>
                   )}
                 </div>
               )}
