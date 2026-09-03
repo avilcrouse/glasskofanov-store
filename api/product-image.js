@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import supabase from "../lib/supabase.js";
-import { isAdminRequest } from "./admin-auth.js";
+import { isAdminRequest } from "../lib/admin-auth.js";
 
 const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxSize = 3 * 1024 * 1024;

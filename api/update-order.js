@@ -1,5 +1,5 @@
 import supabase from "../lib/supabase.js";
-import { isAdminRequest } from "./admin-auth.js";
+import { isAdminRequest } from "../lib/admin-auth.js";
 
 const allowedStatuses = ["Принят", "В доставке", "Выполнен", "Отменён"];
 

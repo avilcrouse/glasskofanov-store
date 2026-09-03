@@ -1,4 +1,4 @@
-import { adminCookie, createAdminSession } from "./admin-auth.js";
+import { adminCookie, createAdminSession } from "../lib/admin-auth.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
