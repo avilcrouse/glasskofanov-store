@@ -768,6 +768,63 @@ main {
   font-size: 13px;
 }
 
+.bulk-image-actions {
+  margin: -8px 0 18px;
+  padding: 16px;
+  border: 1px dashed #aaa;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.bulk-image-actions label {
+  display: inline-block;
+  padding: 11px 15px;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+}
+
+.bulk-image-actions label.disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.bulk-image-actions input {
+  display: none;
+}
+
+.bulk-image-actions p {
+  margin: 10px 0 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.bulk-image-groups {
+  display: grid;
+  gap: 10px;
+  max-height: 260px;
+  overflow: auto;
+  margin-bottom: 18px;
+}
+
+.bulk-image-groups > div {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f4f1eb;
+}
+
+.bulk-image-groups p {
+  margin: 6px 0;
+  color: #555;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.bulk-image-progress {
+  font-weight: 600;
+}
+
 .excel-preview {
   position: fixed;
   inset: 0;

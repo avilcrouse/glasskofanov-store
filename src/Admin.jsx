@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "./supabaseClient";
+import { prepareBulkImagePlan } from "../lib/bulk-product-images.js";
 
 const categories = [
   "Очки корригирующие",
@@ -33,6 +34,8 @@ export default function Admin() {
   const [draggedImageIndex, setDraggedImageIndex] = useState(null);
   const [processingExcel, setProcessingExcel] = useState(false);
   const [excelPreview, setExcelPreview] = useState(null);
+  const [bulkImagePreview, setBulkImagePreview] = useState(null);
+  const [bulkImageProgress, setBulkImageProgress] = useState("");
   const [login, setLogin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
@@ -298,6 +301,56 @@ export default function Admin() {
     }
   }
 
+  function previewBulkProductImages(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    if (files.length > 80) {
+      setError("За один раз можно выбрать не более 80 фотографий");
+      return;
+    }
+    const plan = prepareBulkImagePlan(files, products);
+    setError("");
+    setBulkImagePreview(plan);
+  }
+
+  async function applyBulkProductImages() {
+    if (!bulkImagePreview?.items.length || bulkImagePreview.errors.length) return;
+    setUploadingImage(true);
+    setError("");
+    let updated = 0;
+    try {
+      for (const item of bulkImagePreview.items) {
+        setBulkImageProgress(
+          `Загружаем ${item.product.sku} (${updated + 1} из ${bulkImagePreview.productCount})…`,
+        );
+        const uploadedImages = [];
+        for (const file of item.files) {
+          uploadedImages.push(await prepareAndUploadProductImage(file));
+        }
+        const images = [...item.existingImages, ...uploadedImages];
+        const response = await fetch("/api/products", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...item.product, image: images[0], images }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(`${item.product.sku}: ${result.error || "не удалось сохранить товар"}`);
+        updated += 1;
+      }
+      await loadProducts();
+      setBulkImagePreview(null);
+      window.alert(`Готово: добавлено ${bulkImagePreview.fileCount} фото к ${updated} товарам`);
+    } catch (uploadError) {
+      setError(
+        `${uploadError.message || "Не удалось загрузить фотографии"}. Успешно обновлено товаров: ${updated}.`,
+      );
+      await loadProducts();
+    } finally {
+      setUploadingImage(false);
+      setBulkImageProgress("");
+    }
+  }
+
   function removeProductImage(imageToRemove) {
     setProductForm((current) => {
       const images = current.images.filter((image) => image !== imageToRemove);
@@ -530,6 +583,61 @@ export default function Admin() {
             </label>
             <p>Совпадающие артикулы обновятся, новые — добавятся. Фотографии указываются ссылками через |.</p>
           </div>
+          <div className="bulk-image-actions">
+            <label className={uploadingImage ? "disabled" : ""}>
+              Массово добавить фото
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                multiple
+                disabled={uploadingImage}
+                onChange={(event) => {
+                  previewBulkProductImages(event.target.files);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+            <p>
+              Назовите файлы по артикулу: <strong>GK-001_1.jpg</strong>, <strong>GK-001_2.jpg</strong>.
+              Новые фото добавятся после существующих, ничего не удаляется.
+            </p>
+          </div>
+          {bulkImagePreview && (
+            <div className="excel-preview" role="dialog" aria-label="Предварительный просмотр загрузки фотографий">
+              <div className="excel-preview-card">
+                <h3>Проверка фотографий</h3>
+                <div className="excel-preview-summary">
+                  <span>Товаров: <strong>{bulkImagePreview.productCount}</strong></span>
+                  <span>Фотографий: <strong>{bulkImagePreview.fileCount}</strong></span>
+                  <span>Ошибок: <strong>{bulkImagePreview.errors.length}</strong></span>
+                </div>
+                {bulkImagePreview.items.length > 0 && (
+                  <div className="bulk-image-groups">
+                    {bulkImagePreview.items.map((item) => (
+                      <div key={item.product.id}>
+                        <strong>{item.product.sku} — {item.product.name}</strong>
+                        <p>{item.files.map((file) => file.name).join(", ")}</p>
+                        <small>Было: {item.existingImages.length}, станет: {item.existingImages.length + item.files.length}</small>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {bulkImagePreview.errors.length > 0 && (
+                  <div className="excel-errors">
+                    <h4>Исправьте имена или количество файлов</h4>
+                    {bulkImagePreview.errors.map((message, index) => <p key={index}>{message}</p>)}
+                  </div>
+                )}
+                {bulkImageProgress && <p className="bulk-image-progress">{bulkImageProgress}</p>}
+                <div className="admin-buttons">
+                  <button type="button" onClick={applyBulkProductImages} disabled={uploadingImage || bulkImagePreview.errors.length > 0}>
+                    {uploadingImage ? "Загрузка…" : "Добавить фотографии"}
+                  </button>
+                  <button type="button" onClick={() => setBulkImagePreview(null)} disabled={uploadingImage}>Отмена</button>
+                </div>
+              </div>
+            </div>
+          )}
           {excelPreview && (
             <div className="excel-preview" role="dialog" aria-label="Предварительный просмотр импорта Excel">
               <div className="excel-preview-card">
