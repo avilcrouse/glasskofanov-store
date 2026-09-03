@@ -768,6 +768,63 @@ main {
   font-size: 13px;
 }
 
+.excel-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.excel-preview-card {
+  width: min(620px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 22px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.excel-preview-card h3,
+.excel-preview-card h4,
+.excel-preview-file {
+  margin-top: 0;
+}
+
+.excel-preview-file {
+  color: #666;
+  word-break: break-word;
+}
+
+.excel-preview-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.excel-preview-summary span {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f4f1eb;
+}
+
+.excel-errors {
+  max-height: 280px;
+  overflow: auto;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid #e0a5a5;
+  border-radius: 12px;
+  background: #fff4f4;
+}
+
+.excel-errors p {
+  margin: 8px 0;
+}
+
 .product-images-hint {
   margin: 0 0 9px;
   color: #777;
