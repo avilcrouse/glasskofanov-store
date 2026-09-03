@@ -9,12 +9,12 @@ const products = [
 
 test("groups files by the longest matching SKU and sorts numbered photos", () => {
   const plan = prepareBulkImagePlan(
-    [{ name: "GK-001_2.jpg" }, { name: "GK-001_1.webp" }, { name: "GK_1.png" }],
+    [{ name: "GK-001_2.jpg.jpg" }, { name: "GK-001_1.webp" }, { name: "GK_1.png" }],
     products,
   );
   assert.equal(plan.errors.length, 0);
   assert.equal(plan.productCount, 2);
-  assert.deepEqual(plan.items[0].files.map((file) => file.name), ["GK-001_1.webp", "GK-001_2.jpg"]);
+  assert.deepEqual(plan.items[0].files.map((file) => file.name), ["GK-001_1.webp", "GK-001_2.jpg.jpg"]);
 });
 
 test("reports unknown SKUs, unsupported files and image limit violations", () => {
