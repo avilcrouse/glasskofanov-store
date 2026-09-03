@@ -32,6 +32,7 @@ export default function Admin() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [draggedImageIndex, setDraggedImageIndex] = useState(null);
   const [processingExcel, setProcessingExcel] = useState(false);
+  const [excelPreview, setExcelPreview] = useState(null);
   const [login, setLogin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
@@ -357,6 +358,76 @@ export default function Admin() {
     }
   }
 
+  async function downloadExcelTemplate() {
+    setProcessingExcel(true);
+    setError("");
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Товары", { views: [{ state: "frozen", ySplit: 1 }] });
+      sheet.columns = [
+        { header: "Артикул", key: "sku", width: 18 },
+        { header: "Название", key: "name", width: 32 },
+        { header: "Цена", key: "price", width: 12 },
+        { header: "Категория", key: "category", width: 26 },
+        { header: "Описание", key: "description", width: 45 },
+        { header: "Фотографии", key: "images", width: 65 },
+        { header: "Топовый", key: "is_top", width: 12 },
+        { header: "Активен", key: "active", width: 12 },
+      ];
+      sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      sheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF151515" } };
+      sheet.autoFilter = { from: "A1", to: "H501" };
+      for (let row = 2; row <= 501; row += 1) {
+        sheet.getCell("D" + row).dataValidation = { type: "list", allowBlank: false, formulae: ['"' + categories.join(",") + '"'] };
+        sheet.getCell("G" + row).dataValidation = { type: "list", allowBlank: true, formulae: ['"Да,Нет"'] };
+        sheet.getCell("H" + row).dataValidation = { type: "list", allowBlank: true, formulae: ['"Да,Нет"'] };
+      }
+      const instructions = workbook.addWorksheet("Инструкция");
+      instructions.columns = [{ width: 25 }, { width: 90 }];
+      [
+        ["Поле", "Как заполнять"],
+        ["Артикул", "Обязательный уникальный внутренний код. Совпадающий артикул обновляет существующий товар."],
+        ["Название", "Обязательное название товара."],
+        ["Цена", "Число больше нуля, без символа рубля."],
+        ["Категория", "Выберите значение из выпадающего списка."],
+        ["Фотографии", "Одна или несколько прямых ссылок, разделённых символом |. Максимум 8."],
+        ["Топовый / Активен", "Да или Нет. Пустое поле Активен считается значением Да."],
+      ].forEach((values) => instructions.addRow(values));
+      instructions.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      instructions.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF151515" } };
+      instructions.getColumn(2).alignment = { wrapText: true, vertical: "top" };
+      const buffer = await workbook.xlsx.writeBuffer();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      link.download = "glass-kofanov-template.xlsx";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (excelError) {
+      setError(excelError.message || "Не удалось создать шаблон");
+    } finally {
+      setProcessingExcel(false);
+    }
+  }
+
+  async function applyExcelImport() {
+    if (!excelPreview?.products?.length || excelPreview.errors.length) return;
+    setProcessingExcel(true);
+    setError("");
+    try {
+      const response = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ products: excelPreview.products }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      await loadProducts();
+      setExcelPreview(null);
+      window.alert("Готово: добавлено " + result.created + ", обновлено " + result.updated);
+    } catch (excelError) {
+      setError(excelError.message || "Не удалось загрузить товары");
+    } finally {
+      setProcessingExcel(false);
+    }
+  }
+
   async function importProductsFromExcel(file) {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) return setError("Excel-файл должен быть не больше 5 МБ");
@@ -378,6 +449,7 @@ export default function Admin() {
       sheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1 || !row.values.slice(1).some((value) => value !== null && value !== "")) return;
         imported.push({
+          rowNumber,
           sku: asText(row.getCell(1).value).trim(),
           name: asText(row.getCell(2).value).trim(),
           price: Number(row.getCell(3).value),
@@ -389,12 +461,10 @@ export default function Admin() {
         });
       });
       if (!imported.length) throw new Error("В Excel-файле нет товаров");
-      if (!window.confirm("Загрузить " + imported.length + " товаров? Совпадающие артикулы будут обновлены.")) return;
-      const response = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ products: imported }) });
+      const response = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ products: imported, preview: true }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
-      await loadProducts();
-      window.alert("Готово: добавлено " + result.created + ", обновлено " + result.updated);
+      setExcelPreview({ ...result, products: imported, fileName: file.name });
     } catch (excelError) {
       setError(excelError.message || "Не удалось прочитать Excel-файл");
     } finally {
@@ -448,6 +518,9 @@ export default function Admin() {
       {section === "products" && (
         <>
           <div className="excel-actions">
+            <button type="button" disabled={processingExcel} onClick={downloadExcelTemplate}>
+              Скачать шаблон
+            </button>
             <button type="button" disabled={processingExcel} onClick={exportProductsToExcel}>
               {processingExcel ? "Обработка…" : "Выгрузить Excel"}
             </button>
@@ -457,6 +530,32 @@ export default function Admin() {
             </label>
             <p>Совпадающие артикулы обновятся, новые — добавятся. Фотографии указываются ссылками через |.</p>
           </div>
+          {excelPreview && (
+            <div className="excel-preview" role="dialog" aria-label="Предварительный просмотр импорта Excel">
+              <div className="excel-preview-card">
+                <h3>Проверка Excel</h3>
+                <p className="excel-preview-file">{excelPreview.fileName}</p>
+                <div className="excel-preview-summary">
+                  <span>Строк: <strong>{excelPreview.total}</strong></span>
+                  <span>Добавится: <strong>{excelPreview.created}</strong></span>
+                  <span>Обновится: <strong>{excelPreview.updated}</strong></span>
+                  <span>Ошибок: <strong>{excelPreview.errors.length}</strong></span>
+                </div>
+                {excelPreview.errors.length > 0 && (
+                  <div className="excel-errors">
+                    <h4>Исправьте строки и загрузите файл повторно</h4>
+                    {excelPreview.errors.map((item, index) => (
+                      <p key={item.row + "-" + index}><strong>Строка {item.row}</strong> · {item.sku}: {item.message}</p>
+                    ))}
+                  </div>
+                )}
+                <div className="admin-buttons">
+                  <button type="button" onClick={applyExcelImport} disabled={processingExcel || excelPreview.errors.length > 0}>Применить изменения</button>
+                  <button type="button" onClick={() => setExcelPreview(null)} disabled={processingExcel}>Отмена</button>
+                </div>
+              </div>
+            </div>
+          )}
           <form className="product-admin-form" onSubmit={saveProduct}>
             <h3>{editingProductId ? "Редактировать товар" : "Новый товар"}</h3>
             <input
