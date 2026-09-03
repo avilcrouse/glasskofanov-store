@@ -53,6 +53,15 @@ const initialProducts = [
   },
 ];
 
+function formatOrderDate(value) {
+  if (!value) return "Дата не указана";
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Дата не указана"
+    : date.toLocaleDateString("ru-RU");
+}
+
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
   const [page, setPage] = useState(() =>
@@ -678,7 +687,7 @@ function App() {
             {customerOrders.map((order) => (
               <article key={order.order_number}>
                 <div><strong>Заказ №{order.order_number}</strong><span>{order.status}</span></div>
-                <p>{new Date(order.created_at).toLocaleDateString("ru-RU")} · {Number(order.total).toLocaleString("ru-RU")} ₽</p>
+                <p>{formatOrderDate(order.created_at)} · {Number(order.total).toLocaleString("ru-RU")} ₽</p>
                 <p>{order.delivery_type === "cdek" ? "CDEK" : order.delivery_type === "yandex" ? "Яндекс Маркет" : "Курьер"}{order.pickup_point_address ? ": " + order.pickup_point_address : ""}</p>
                 {order.cart?.map((item) => <p key={item.id}>{item.name} × {item.quantity}</p>)}
               </article>
