@@ -1052,6 +1052,72 @@ main {
   gap: 20px;
 }
 
+.admin-order-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(145px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f4f1eb;
+}
+
+.admin-order-filters input,
+.admin-order-filters select {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d8d3ca;
+  border-radius: 11px;
+  background: #fff;
+  font: inherit;
+}
+
+.admin-order-filter-summary {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-order-filter-summary button {
+  padding: 8px 12px;
+  border: 1px solid #aaa;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.order-payment {
+  color: #9c2f2f;
+  font-weight: 600;
+}
+
+.order-payment.paid {
+  color: #18733a;
+}
+
+@media (max-width: 760px) {
+  .admin-order-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-order-filters input {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 460px) {
+  .admin-order-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-filters input,
+  .admin-order-filter-summary {
+    grid-column: 1;
+  }
+}
+
 .order-card {
   background: #f7f7f7;
   border-radius: 20px;
