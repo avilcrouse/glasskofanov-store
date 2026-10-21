@@ -62,6 +62,44 @@ function formatOrderDate(value) {
     : date.toLocaleDateString("ru-RU");
 }
 
+function NavIcon({ name }) {
+  const icons = {
+    home: (
+      <>
+        <path d="M3 10.5 12 3l9 7.5" />
+        <path d="M5.5 9.5V21h13V9.5M9 21v-7h6v7" />
+      </>
+    ),
+    catalog: (
+      <>
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </>
+    ),
+    cart: (
+      <>
+        <path d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.5L20.5 8H6" />
+        <circle cx="9.5" cy="20" r="1" />
+        <circle cx="17.5" cy="20" r="1" />
+      </>
+    ),
+    profile: (
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4.5 21c.7-4.2 3.2-6.5 7.5-6.5s6.8 2.3 7.5 6.5" />
+      </>
+    ),
+  };
+
+  return (
+    <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+      {icons[name]}
+    </svg>
+  );
+}
+
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
   const [page, setPage] = useState(() =>
@@ -766,7 +804,7 @@ function App() {
           className={page === "home" ? "active" : ""}
           onClick={() => setPage("home")}
         >
-          <span>⌂</span>
+          <NavIcon name="home" />
           Главная
         </button>
 
@@ -774,7 +812,7 @@ function App() {
           className={page === "catalog" ? "active" : ""}
           onClick={() => setPage("catalog")}
         >
-          <span>▦</span>
+          <NavIcon name="catalog" />
           Каталог
         </button>
 
@@ -782,7 +820,7 @@ function App() {
           className={page === "cart" ? "active" : ""}
           onClick={() => setPage("cart")}
         >
-          <span>○</span>
+          <NavIcon name="cart" />
           Корзина
           {totalItems > 0 && <b className="badge">{totalItems}</b>}
         </button>
@@ -791,7 +829,7 @@ function App() {
           className={page === "profile" ? "active" : ""}
           onClick={() => setPage("profile")}
         >
-          <span>♙</span>
+          <NavIcon name="profile" />
           Профиль
         </button>
 

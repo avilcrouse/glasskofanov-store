@@ -92,6 +92,13 @@ main {
   margin-bottom: 24px;
 }
 
+.catalog-title,
+.catalog-categories,
+.catalog-section-heading,
+.product-card {
+  font-family: "Avenir Next", "Segoe UI Variable", Inter, system-ui, sans-serif;
+}
+
 .catalog-title {
   display: flex;
   align-items: center;
@@ -103,6 +110,8 @@ main {
   margin: 0;
   color: #111;
   font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
 }
 
 .catalog-title span,
@@ -129,6 +138,8 @@ main {
   background: #fff;
   color: #333;
   font-size: 13px;
+  font-weight: 520;
+  letter-spacing: -0.01em;
   line-height: 1.25;
   text-align: left;
 }
@@ -414,17 +425,28 @@ main {
 
 .bottom-nav button {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border: none;
   background: transparent;
   color: #999;
-  font-size: 11px;
+  font-family: "Avenir Next", "Segoe UI Variable", Inter, system-ui, sans-serif;
+  font-size: 10.5px;
+  line-height: 1;
   cursor: pointer;
 }
 
-.bottom-nav button span {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 20px;
+.nav-icon {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .bottom-nav button.active {
@@ -700,6 +722,11 @@ main {
   border-radius: 12px;
   background: #fff;
   font: inherit;
+}
+
+.delivery-select {
+  display: block;
+  margin-bottom: 14px;
 }
 
 .pickup-selector {
