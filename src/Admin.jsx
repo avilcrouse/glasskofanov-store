@@ -24,6 +24,10 @@ const emptyProduct = {
 
 export default function Admin() {
   const [orders, setOrders] = useState([]);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [orderPaymentFilter, setOrderPaymentFilter] = useState("all");
+  const [orderDeliveryFilter, setOrderDeliveryFilter] = useState("all");
   const [products, setProducts] = useState([]);
   const [section, setSection] = useState("orders");
   const [productForm, setProductForm] = useState(emptyProduct);
@@ -535,6 +539,48 @@ export default function Admin() {
     return matchesCategory && matchesSku;
   });
 
+  const orderStatuses = [...new Set(orders.map((order) => order.status).filter(Boolean))];
+  const normalizedOrderSearch = orderSearch.trim().toLocaleLowerCase("ru-RU");
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus = orderStatusFilter === "all" || order.status === orderStatusFilter;
+    const matchesPayment =
+      orderPaymentFilter === "all" ||
+      (orderPaymentFilter === "paid"
+        ? ["succeeded", "legacy"].includes(order.payment_status)
+        : !["succeeded", "legacy"].includes(order.payment_status));
+    const matchesDelivery =
+      orderDeliveryFilter === "all" || order.delivery_type === orderDeliveryFilter;
+    const searchableValues = [
+      order.order_number,
+      order.name,
+      order.phone,
+      order.city,
+      order.address,
+      ...(order.cart || []).flatMap((item) => [item.name, item.sku]),
+    ];
+    const matchesSearch =
+      !normalizedOrderSearch ||
+      searchableValues.some((value) =>
+        String(value || "").toLocaleLowerCase("ru-RU").includes(normalizedOrderSearch),
+      );
+    return matchesStatus && matchesPayment && matchesDelivery && matchesSearch;
+  });
+
+  function paymentLabel(paymentStatus) {
+    if (["succeeded", "legacy"].includes(paymentStatus)) return "Оплачен";
+    if (paymentStatus === "pending") return "Оплата начата";
+    if (paymentStatus === "failed") return "Ошибка оплаты";
+    return "Не оплачен";
+  }
+
+  function formatOrderDate(value) {
+    if (!value) return "Дата не указана";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? "Дата не указана"
+      : date.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
+  }
+
   return (
     <div className="admin">
       <div className="page-heading">
@@ -835,8 +881,38 @@ export default function Admin() {
         </>
       )}
 
-      {section === "orders" && <div className="orders-list">
-        {orders.map((order) => (
+      {section === "orders" && <>
+        <div className="admin-order-filters">
+          <input
+            type="search"
+            placeholder="Номер, имя, телефон или товар"
+            aria-label="Поиск заказов"
+            value={orderSearch}
+            onChange={(event) => setOrderSearch(event.target.value)}
+          />
+          <select aria-label="Фильтр заказов по статусу" value={orderStatusFilter} onChange={(event) => setOrderStatusFilter(event.target.value)}>
+            <option value="all">Все статусы</option>
+            {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+          <select aria-label="Фильтр заказов по оплате" value={orderPaymentFilter} onChange={(event) => setOrderPaymentFilter(event.target.value)}>
+            <option value="all">Любая оплата</option>
+            <option value="paid">Оплачен</option>
+            <option value="unpaid">Не оплачен</option>
+          </select>
+          <select aria-label="Фильтр заказов по доставке" value={orderDeliveryFilter} onChange={(event) => setOrderDeliveryFilter(event.target.value)}>
+            <option value="all">Любая доставка</option>
+            <option value="courier">Курьер</option>
+            <option value="cdek">CDEK</option>
+          </select>
+          <div className="admin-order-filter-summary">
+            <span>Показано: <strong>{filteredOrders.length}</strong> из {orders.length}</span>
+            <button type="button" onClick={() => { setOrderSearch(""); setOrderStatusFilter("all"); setOrderPaymentFilter("all"); setOrderDeliveryFilter("all"); }}>
+              Сбросить
+            </button>
+          </div>
+        </div>
+        <div className="orders-list">
+        {filteredOrders.map((order) => (
           <div className="order-card" key={order.id}>
             <div className="order-top">
               <h3>Заказ №{order.order_number}</h3>
@@ -857,6 +933,11 @@ export default function Admin() {
             </div>
 
             <div className="order-info">
+              <p>🕒 {formatOrderDate(order.created_at)}</p>
+              <p className={[
+                "succeeded",
+                "legacy",
+              ].includes(order.payment_status) ? "order-payment paid" : "order-payment"}>💳 {paymentLabel(order.payment_status)}</p>
               <p>👤 {order.name}</p>
 
               <p>📞 {order.phone}</p>
@@ -931,7 +1012,9 @@ export default function Admin() {
             </div>
           </div>
         ))}
-      </div>}
+        {filteredOrders.length === 0 && <p className="admin-products-empty">Заказы не найдены</p>}
+      </div>
+      </>}
     </div>
   );
 }
